@@ -3280,16 +3280,14 @@
             margin: 4px 0;
         }
 
-        /* --- WebKit / Blink --- */
         .filter-slider::-webkit-slider-runnable-track {
             height: 16px;
             border-radius: var(--shape-full);
-            background:
-                radial-gradient(circle at calc(100% - 8px) 50%, var(--md-sys-color-on-surface-variant) 0 2px, transparent 2px),
-                linear-gradient(to right,
-                    var(--md-sys-color-primary) 0 calc(var(--val, 0) * 1% - 8px),
-                    transparent calc(var(--val, 0) * 1% - 8px) calc(var(--val, 0) * 1% + 8px),
-                    var(--md-sys-color-secondary-container) calc(var(--val, 0) * 1% + 8px) 100%);
+            background: linear-gradient(to right,
+                var(--md-sys-color-primary) 0%,
+                var(--md-sys-color-primary) calc(var(--val, 0) * 1%),
+                var(--md-sys-color-secondary-container) calc(var(--val, 0) * 1%),
+                var(--md-sys-color-secondary-container) 100%);
         }
 
         .filter-slider::-webkit-slider-thumb {
@@ -5031,7 +5029,6 @@
             white-space: nowrap;
         }
 
-        /* Tabela de jogos */
         .bm-tablewrap {
             border: 1px solid var(--md-sys-color-outline-variant);
             border-radius: var(--shape-m);
