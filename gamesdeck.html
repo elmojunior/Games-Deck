@@ -6314,12 +6314,18 @@
                     lista.splice(i, 1); salvar(lista); return true;
                 },
                 exportar() {
+                    const toISO = (ts) => {
+                        if (!ts) return null;
+                        const d = new Date(ts);
+                        if (isNaN(d.getTime())) return null;
+                        return d.toISOString().split('T')[0];
+                    };
                     const exportavel = lista.map(j => {
                         const id = appIdDe(j.steam_url);
                         const d = cacheGet('details:' + id) || {};
                         const jogoExp = { ...j };
                         if (d.desenvolvedora) jogoExp.desenvolvedora = d.desenvolvedora;
-                        if (d.lancamento) jogoExp.lancamento = d.lancamento;
+                        if (d.lancamento) jogoExp.lancamento = toISO(d.lancamento);
                         if (d.generos && d.generos.length) jogoExp.generos = d.generos;
                         if (d.categorias && d.categorias.length) jogoExp.recursos = d.categorias;
                         return jogoExp;
@@ -6347,12 +6353,23 @@
                         // Grava no cache de detalhes se houver dados adicionais no JSON
                         if (j.desenvolvedora || j.lancamento || j.generos || j.recursos || j.categorias) {
                             const cached = cacheGet('details:' + id) || {};
+                            let tsLanc = null;
+                            if (j.lancamento !== undefined) {
+                                if (typeof j.lancamento === 'number') {
+                                    tsLanc = j.lancamento;
+                                } else if (typeof j.lancamento === 'string' && j.lancamento.trim()) {
+                                    const dateStr = j.lancamento.includes('T') ? j.lancamento : j.lancamento.trim() + 'T00:00:00';
+                                    tsLanc = Date.parse(dateStr) || Date.parse(j.lancamento) || null;
+                                }
+                            } else {
+                                tsLanc = cached.lancamento || null;
+                            }
                             const details = {
                                 nome: j.nome || cached.nome || ('App ' + id),
                                 descricao: cached.descricao || '',
                                 desenvolvedora: j.desenvolvedora || cached.desenvolvedora || '',
                                 editora: cached.editora || '',
-                                lancamento: j.lancamento !== undefined ? j.lancamento : cached.lancamento || null,
+                                lancamento: tsLanc,
                                 metacritic: cached.metacritic || null,
                                 controle: cached.controle || null,
                                 screenshots: cached.screenshots || [],
