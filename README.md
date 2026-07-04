@@ -1,4 +1,4 @@
-# Games Deck 🎮
+# 🎮 Games Deck 
 
 > *"A ânsia de ter e o tédio de possuir."*
 > — Adaptado do pensamento de Arthur Schopenhauer
