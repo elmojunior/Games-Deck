@@ -6127,14 +6127,6 @@
                     placeholder="https://store.steampowered.com/app/NÚMERO/" autocomplete="off">
             </div>
             <div class="bm-field">
-                <label class="bm-label" for="bfLaunch">Link de execução <span class="bm-label__hint">—
-                        opcional</span></label>
-                <input type="text" id="bfLaunch" class="bm-input"
-                    placeholder="Ex.: com.epicgames.launcher://apps/Fortnite?action=launch" autocomplete="off">
-                <span class="bm-hint">Deixe vazio para iniciar pela Steam. Use para abrir o jogo por Epic Games, GOG, ou
-                    outro launcher.</span>
-            </div>
-            <div class="bm-field">
                 <label class="bm-label" for="bfAquis">Data de aquisição <span class="bm-label__hint">—
                         opcional</span></label>
                 <div class="md-datepicker" id="dpAquis">
@@ -6161,6 +6153,24 @@
                         vírgula</span></label>
                 <input type="text" id="bfRecursos" class="bm-input"
                     placeholder="Ex.: Um jogador, Coop, Compatibilidade total com controle" autocomplete="off">
+            </div>
+            <div class="bm-field">
+                <label class="bm-label" for="bfLaunch">Link de execução <span class="bm-label__hint">—
+                        opcional</span></label>
+                <input type="text" id="bfLaunch" class="bm-input"
+                    placeholder="Ex.: com.epicgames.launcher://apps/Fortnite?action=launch" autocomplete="off">
+                <span class="bm-hint">Deixe vazio para iniciar pela Steam. Use para abrir o jogo por Epic Games, GOG, ou
+                    outro launcher.</span>
+            </div>
+            <div class="bm-field">
+                <label class="bm-label" for="bfImgV">URL da Capa Vertical <span class="bm-label__hint">— opcional</span></label>
+                <input type="text" id="bfImgV" class="bm-input" placeholder="https://exemplo.com/capa_vertical.jpg" autocomplete="off">
+                <span class="bm-hint">URL de imagem personalizada para capas em grade vertical.</span>
+            </div>
+            <div class="bm-field">
+                <label class="bm-label" for="bfImg">URL da Capa Horizontal <span class="bm-label__hint">— opcional</span></label>
+                <input type="text" id="bfImg" class="bm-input" placeholder="https://exemplo.com/capa_horizontal.jpg" autocomplete="off">
+                <span class="bm-hint">URL de imagem personalizada para cards, banners e miniaturas horizontais.</span>
             </div>
             <p class="bm-msg" id="bfMsg"></p>
 
@@ -6279,13 +6289,15 @@
             window.bibStore = {
                 listar() { return lista; },
                 getById(id) { return lista.find(j => appIdDe(j.steam_url) === String(id)) || null; },
-                add(url, nome, launch, aquisicao) {
+                add(url, nome, launch, aquisicao, img, img_v) {
                     const id = appIdDe(url);
                     if (!id) return { ok: false, msg: 'Link da Steam inválido. Use um link /app/NÚMERO/.' };
                     if (lista.some(j => appIdDe(j.steam_url) === id)) return { ok: false, msg: 'Esse jogo já está na biblioteca.' };
                     const jogo = { nome: (nome || '').trim() || ('App ' + id), steam_url: 'https://store.steampowered.com/app/' + id + '/' };
                     const lz = (launch || '').trim(); if (lz) jogo.launch = lz;
                     const aq = (aquisicao || '').trim(); if (aq) jogo.aquisicao = aq;
+                    const im = (img || '').trim(); if (im) jogo.img = im;
+                    const imv = (img_v || '').trim(); if (imv) jogo.img_v = imv;
                     lista.push(jogo); salvar(lista);
                     return { ok: true, jogo: jogo };
                 },
@@ -6302,6 +6314,10 @@
                     if (lz) jogo.launch = lz; else delete jogo.launch;
                     const aq = (data.aquisicao || '').trim();
                     if (aq) jogo.aquisicao = aq; else delete jogo.aquisicao;
+                    const im = (data.img || '').trim();
+                    if (im) jogo.img = im; else delete jogo.img;
+                    const imv = (data.img_v || '').trim();
+                    if (imv) jogo.img_v = imv; else delete jogo.img_v;
                     salvar(lista);
                     return { ok: true, jogo: jogo };
                 },
@@ -6391,6 +6407,10 @@
                         if (j.favorito) jogo.favorito = true;
                         const lz = j.launch || j.link_execucao;
                         if (lz) jogo.launch = lz;
+                        const im = j.img || j.capa_horizontal;
+                        if (im) jogo.img = im;
+                        const imv = j.img_v || j.capa_vertical;
+                        if (imv) jogo.img_v = imv;
                     });
                     salvar(base);
                     // Recarrega lista na memória para refletir no painel atual se necessário
@@ -6587,6 +6607,8 @@
                     q('bfNome').value = j ? (j.nome || '') : '';
                     q('bfSteam').value = j ? (j.steam_url || '') : '';
                     q('bfLaunch').value = j ? (j.launch || '') : '';
+                    q('bfImg').value = j ? (j.img || '') : '';
+                    q('bfImgV').value = j ? (j.img_v || '') : '';
                     q('bfAquis').value = j ? fmtDataBR(j.aquisicao || j.data_aquisicao) : '';
                     if (dpAquis) dpAquis.setISO(j ? (j.aquisicao || j.data_aquisicao || '') : '');
                     const details = editId ? (cacheGet('details:' + editId) || {}) : {};
@@ -6600,8 +6622,15 @@
                 function salvarForm() {
                     const aquisIso = dpAquis ? dpAquis.getISO() : '';
                     if (q('bfAquis').value.trim() && !aquisIso) { fmsg('Data de aquisição inválida. Use dd/mm/aaaa.', true); return; }
-                    const dados = { nome: q('bfNome').value, steam_url: q('bfSteam').value, launch: q('bfLaunch').value, aquisicao: aquisIso };
-                    const r = editId ? window.bibStore.update(editId, dados) : window.bibStore.add(dados.steam_url, dados.nome, dados.launch, dados.aquisicao);
+                    const dados = { 
+                        nome: q('bfNome').value, 
+                        steam_url: q('bfSteam').value, 
+                        launch: q('bfLaunch').value, 
+                        aquisicao: aquisIso,
+                        img: q('bfImg').value,
+                        img_v: q('bfImgV').value
+                    };
+                    const r = editId ? window.bibStore.update(editId, dados) : window.bibStore.add(dados.steam_url, dados.nome, dados.launch, dados.aquisicao, dados.img, dados.img_v);
                     if (!r.ok) { fmsg(r.msg, true); return; }
 
                     const newId = appIdDe(dados.steam_url);
