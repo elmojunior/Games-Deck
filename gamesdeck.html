@@ -95,7 +95,7 @@
             color-scheme: dark;
         }
 
-        /* ---------------- TEMA CLARO ----------------- */
+        /* ---------------- TEMA CLARO ---------------- */
         :root[data-theme="light"] {
             --md-sys-color-background: #fdf7ff;
             --md-sys-color-surface: #fdf7ff;
@@ -6388,7 +6388,8 @@
                                 screenshots: cached.screenshots || [],
                                 video: cached.video || null,
                                 generos: j.generos || cached.generos || [],
-                                categorias: j.recursos || j.categorias || cached.categorias || []
+                                categorias: j.recursos || j.categorias || cached.categorias || [],
+                                incompleto: true
                             };
                             cacheSet('details:' + id, details, 50 * 365 * 24 * 60 * 60 * 1000);
                         }
@@ -7063,7 +7064,7 @@
                 });
             }
             async function getDetails(appId) {
-                const ck = 'details:' + appId, c = cacheGet(ck); if (c) return c;
+                const ck = 'details:' + appId, c = cacheGet(ck); if (c && !c.incompleto) return c;
                 return enfileirar(async () => {
                     try {
                         const d = await steamFetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=portuguese`);
@@ -7993,26 +7994,36 @@
                     const n = d?.response?.player_count ?? null; if (n != null) cacheSet(ck, n, TTL.players); return n;
                 });
             }
+            function pickVideo(movies) {
+                if (!movies?.length) return null;
+                const m = movies[0];
+                const direto = m.mp4?.max || m.mp4?.['480'] || m.webm?.max || m.webm?.['480'];
+                const hls = m.hls_h264;
+                return {
+                    direto: direto ? direto.replace(/^http:/, 'https:') : null,
+                    hls: hls ? hls.replace(/^http:/, 'https:') : null
+                };
+            }
             async function getDetails(appId) {
-                const ck = 'details:' + appId, c = cacheGet(ck); if (c) return c;
+                const ck = 'details:' + appId, c = cacheGet(ck); if (c && !c.incompleto) return c;
                 return enfileirar(async () => {
                     try {
-                        const d = await steamFetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=portuguese`);
-                        const node = d?.[appId]; if (!node?.success || !node.data) return null;
-                        const g = node.data;
-                        const m = {
-                            nome: g.name,
-                            descricao: g.short_description || '',
-                            generos: (g.genres || []).map(x => x.description),
-                            categorias: (g.categories || []).map(x => x.description),
-                            desenvolvedora: (g.developers || [])[0] || '',
-                            editora: (g.publishers || [])[0] || '',
-                            lancamento: parseReleaseDate(g.release_date),
-                            metacritic: g.metacritic?.score ?? null,
-                            controle: g.controller_support || null,
-                            screenshots: (g.screenshots || []).slice(0, 6).map(s => s.path_thumbnail),
-                            video: null
-                        };
+                         const d = await steamFetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=portuguese`);
+                         const node = d?.[appId]; if (!node?.success || !node.data) return null;
+                         const g = node.data;
+                         const m = {
+                             nome: g.name,
+                             descricao: g.short_description || '',
+                             generos: (g.genres || []).map(x => x.description),
+                             categorias: (g.categories || []).map(x => x.description),
+                             desenvolvedora: (g.developers || [])[0] || '',
+                             editora: (g.publishers || [])[0] || '',
+                             lancamento: parseReleaseDate(g.release_date),
+                             metacritic: g.metacritic?.score ?? null,
+                             controle: g.controller_support || null,
+                             screenshots: (g.screenshots || []).slice(0, 6).map(s => s.path_thumbnail),
+                             video: pickVideo(g.movies)
+                         };
                         await window.mesclarMarcadores(appId, m.generos, m.categorias);
                         cacheSet(ck, m, TTL.details); return m;
                     } catch { return null; }
