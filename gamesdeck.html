@@ -1809,7 +1809,7 @@
    ========================================================================= */
         .banner-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(3, auto);
             grid-auto-rows: 0;
             overflow: hidden;
@@ -2017,6 +2017,14 @@
 
         :root[data-theme="light"] .shelf--highlight .list-item:hover {
             background: var(--md-sys-color-surface-container);
+        }
+
+        .shelf--highlight #acervoToggle {
+            background: var(--md-sys-color-surface-container);
+        }
+
+        :root[data-theme="light"] .shelf--highlight #acervoToggle {
+            background: var(--md-sys-color-surface);
         }
 
         .list-item__thumb {
@@ -6535,6 +6543,13 @@
                     <div class="banner-card skeleton"></div>
                     <div class="banner-card skeleton"></div>
                     <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
                 </div>
             </section>
 
@@ -8530,7 +8545,7 @@
                     sugestoesOrdem = [...JOGOS].sort(() => Math.random() - 0.5);
                 }
                 grid.innerHTML = '';
-                sugestoesOrdem.slice(0, 8).forEach(j => grid.appendChild(criarBannerCard(j)));
+                sugestoesOrdem.slice(0, 15).forEach(j => grid.appendChild(criarBannerCard(j)));
             }
             function criarBannerCard(jogo) {
                 const el = document.createElement('article');
