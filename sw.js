@@ -57,8 +57,8 @@ self.addEventListener('fetch', function (e) {
         return;
     }
 
-    /* Fontes e demais assets estáticos: cache primeiro */
-    if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
+    /* Fontes e demais assets estáticos (incluindo ícones dinâmicos do PWA): cache primeiro */
+    if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com') || url.includes('icon-192.png') || url.includes('icon-512.png')) {
         e.respondWith(
             caches.match(e.request).then(function (cached) {
                 if (cached) return cached;
@@ -69,5 +69,6 @@ self.addEventListener('fetch', function (e) {
                 });
             })
         );
+        return;
     }
 });
