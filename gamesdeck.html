@@ -7151,6 +7151,7 @@
                 hls.loadSource(src); hls.attachMedia(videoEl);
                 videoEl._hls = hls; // guardado no próprio elemento para destruir depois
             }
+            window.tocarHls = tocarHls;
             function parseReleaseDate(rd) {
                 if (!rd || rd.coming_soon || !rd.date) return null;
                 const dateStr = String(rd.date).trim();
@@ -8335,6 +8336,61 @@
             <div class="card__tags">${jogo.temFomo ? `<span class="fomo-chip">${jogo.fomoLabel || '🆕 Novidade'}</span>` : ''}</div>${players}${notaHtml}
         </div>
         <div class="card__body"><div class="card__title">${escapeHtml(jogo.nome)}</div>${generos ? `<div class="card__genres">${generos}</div>` : ''}</div>`;
+
+                const video = jogo.details?.video;
+                const temVideo = video && (video.direto || video.hls);
+                if (temVideo) {
+                    const banner = el.querySelector('.card__banner');
+                    let videoEl = null;
+                    let hoverTimer = null;
+                    
+                    const tocar = () => {
+                        if (videoEl) return;
+                        videoEl = document.createElement('video');
+                        videoEl.muted = true;
+                        videoEl.loop = true;
+                        videoEl.playsInline = true;
+                        videoEl.setAttribute('muted', 'true');
+                        videoEl.style.position = 'absolute';
+                        videoEl.style.top = '0';
+                        videoEl.style.left = '0';
+                        videoEl.style.width = '100%';
+                        videoEl.style.height = '100%';
+                        videoEl.style.objectFit = 'cover';
+                        videoEl.style.zIndex = '1';
+                        videoEl.style.borderRadius = 'inherit';
+                        
+                        if (video.direto) {
+                            videoEl.src = video.direto;
+                        }
+                        
+                        banner.insertBefore(videoEl, banner.firstChild);
+                        
+                        if (video.hls && window.tocarHls) {
+                            window.tocarHls(videoEl, video.hls, () => { videoEl.remove(); videoEl = null; });
+                        }
+                        
+                        videoEl.play().catch(() => {});
+                    };
+                    
+                    const parar = () => {
+                        clearTimeout(hoverTimer);
+                        if (videoEl) {
+                            videoEl.pause();
+                            if (videoEl._hls) {
+                                videoEl._hls.destroy();
+                            }
+                            videoEl.remove();
+                            videoEl = null;
+                        }
+                    };
+                    
+                    el.addEventListener('mouseenter', () => {
+                        hoverTimer = setTimeout(tocar, 300);
+                    });
+                    el.addEventListener('mouseleave', parar);
+                }
+
                 return el;
             }
 
