@@ -3265,6 +3265,17 @@
             font: var(--md-sys-typescale-title-medium);
         }
 
+        .gp-newsitem__intro {
+            font-size: .84rem;
+            color: var(--md-sys-color-on-surface-var);
+            line-height: 1.55;
+            margin-top: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
         .gp-newsitem__meta {
             font-size: .76rem;
             color: var(--md-sys-color-on-surface-var);
@@ -8574,10 +8585,19 @@
                 const fomoTiposCount = new Map();
                 JOGOS.forEach(j => { if (j.temFomo && j.fomoLabel) fomoTiposCount.set(j.fomoLabel, (fomoTiposCount.get(j.fomoLabel) || 0) + 1); });
                 if (fomoTiposCount.size) {
+                    const fomoDesc = {
+                        '🎯 Nova Temporada': 'Notícia com "season", "temporada" ou número de temporada no título.',
+                        '🔄️ Atualização Nova': 'Notícia com "update", "patch", "atualiza", "hotfix" ou versão (ex: v1.2) no título.',
+                        '🎉 Evento Ativo': 'Notícia com "event", "evento", "festival", "holiday", datas comemorativas ou "anniversary" no título.',
+                        '✨ Novo Conteúdo': 'Notícia com "dlc", "expansion", "expansão", "chapter" ou "capítulo" no título.',
+                        '🔥 Novidade Fresca': 'Notícia publicada há menos de 3 dias sem categoria específica identificada.',
+                        '🆕 Novidade': 'Notícia publicada entre 3 e 7 dias sem categoria específica identificada.',
+                    };
                     const fomoGrp = document.createElement('div'); fomoGrp.className = 'filter-group';
                     fomoGrp.innerHTML = '<h3 class="filter-group__title">Tipo de novidade</h3>';
                     [...fomoTiposCount.entries()].sort((a, b) => b[1] - a[1]).forEach(([label, count]) => {
                         const lbl = document.createElement('label'); lbl.className = 'filter-opt';
+                        if (fomoDesc[label]) lbl.title = fomoDesc[label];
                         lbl.innerHTML = `<input type="checkbox" ${sel.fomoTipos.has(label) ? 'checked' : ''}><span class="filter-opt__nome">${label}</span><span class="filter-opt__num">${count}</span>`;
                         lbl.querySelector('input').addEventListener('change', (e) => { e.target.checked ? sel.fomoTipos.add(label) : sel.fomoTipos.delete(label); renderLista(); });
                         fomoGrp.appendChild(lbl);
@@ -9135,8 +9155,8 @@
                 const n = d?.response?.player_count ?? null; if (n != null) cacheSet(ck, n, TTL.players); return n;
             }
             async function getNews(appId) {
-                const ck = 'news:' + appId, c = cacheGet(ck); if (c) return c;
-                const d = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=6&maxlength=400`);
+                const ck = 'newsgp:' + appId, c = cacheGet(ck); if (c) return c;
+                const d = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=8&maxlength=400`);
                 const items = (d?.appnews?.newsitems || []).map(n => ({ title: n.title, url: n.url, date: n.date * 1000, feed: n.feedlabel || '', author: n.author || '', contents: n.contents || '' }));
                 if (items.length) cacheSet(ck, items, TTL.news); return items;
             }
@@ -9277,7 +9297,7 @@
                 await renderFomoCard(news, appId);
                 renderSobre(full);
                 renderRequisitos(full);
-                renderNoticias(news);
+                await renderNoticias(news, appId);
                 setLoadBar(100, true);
 
                 setStatus(full ? 'Ficha carregada.' : 'Não foi possível carregar os detalhes (o endpoint appdetails pode ter sido bloqueado pelo navegador). Capas e jogadores ainda funcionam.');
@@ -9449,14 +9469,27 @@
                 attachRipple($('#gpPlay'));
             }
 
+            const STEAM_DESC_PT = {
+                'Overwhelmingly Positive': 'Extremamente Positivas',
+                'Very Positive': 'Muito Positivas',
+                'Positive': 'Positivas',
+                'Mostly Positive': 'Majoritariamente Positivas',
+                'Mixed': 'Mistas',
+                'Mostly Negative': 'Majoritariamente Negativas',
+                'Negative': 'Negativas',
+                'Very Negative': 'Muito Negativas',
+                'Overwhelmingly Negative': 'Extremamente Negativas',
+                'Neutras': 'Mistas',
+            };
             function renderReviewBlock(reviews) {
                 if (!reviews || !reviews.total) return '';
                 const pct = Math.round((reviews.pos / reviews.total) * 100);
                 const cls = pct >= 80 ? 'hi' : pct >= 60 ? 'yellow' : pct >= 50 ? 'mid' : 'lo';
+                const desc = STEAM_DESC_PT[reviews.desc] || reviews.desc || 'Avaliações';
                 return `
         <div class="gp-reviews gp-reviews--${cls}">
             <div class="gp-reviews__head">
-                <span class="gp-reviews__desc">${escapeHtml(reviews.desc || 'Avaliações')}</span>
+                <span class="gp-reviews__desc">${escapeHtml(desc)}</span>
                 <span class="gp-reviews__pct">${pct}%</span>
             </div>
             <div class="gp-reviews__bar"><span style="width:${pct}%"></span></div>
@@ -9561,14 +9594,37 @@
             }
 
             /* ---------------------------- Notícias ---------------------------- */
-            function renderNoticias(news) {
+            async function renderNoticias(news, appId) {
                 if (!news || !news.length) return;
+                let enriched = news.map(n => ({ ...n }));
+                const semBody = enriched.every(n => !(n.body || n.contents));
+                if (semBody && appId) {
+                    const d1 = await steamFetch(`https://store.steampowered.com/events/ajaxgetadjacentpartnerevents/?appid=${appId}&count_before=0&count_after=8&language=portuguese`);
+                    if (d1?.events?.length) {
+                        d1.events.forEach(e => {
+                            const title = e.event_name || '';
+                            const body = e.announcement_body?.body || '';
+                            const match = enriched.find(n => n.title === title);
+                            if (match) match.body = body;
+                        });
+                    }
+                    if (enriched.every(n => !n.body)) {
+                        const d2 = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=8&maxlength=500`);
+                        (d2?.appnews?.newsitems || []).forEach(item => {
+                            const match = enriched.find(n => n.title === item.title);
+                            if (match) match.body = item.contents || '';
+                        });
+                    }
+                }
                 $('#gpNewsSec').hidden = false;
-                $('#gpNews').innerHTML = news.map(n => `
-        <a class="gp-newsitem" href="${n.url}" target="_blank" rel="noopener">
+                $('#gpNews').innerHTML = enriched.map(n => {
+                    const intro = fomoLimparCorpo(n.body || n.contents || '');
+                    return `<a class="gp-newsitem" href="${escapeHtml(n.url)}" target="_blank" rel="noopener">
             <div class="gp-newsitem__title">${escapeHtml(n.title)}</div>
+            ${intro ? `<div class="gp-newsitem__intro">${escapeHtml(intro)}</div>` : ''}
             <div class="gp-newsitem__meta">${fmtData(n.date)}${n.feed ? ' · ' + escapeHtml(n.feed) : ''}${n.author ? ' · ' + escapeHtml(n.author) : ''}</div>
-        </a>`).join('');
+        </a>`;
+                }).join('');
             }
 
             /* ------------------------- Dynamic Color -------------------------- */
