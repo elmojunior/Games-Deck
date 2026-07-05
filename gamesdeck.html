@@ -22,6 +22,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#5E1DCF" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#625890" media="(prefers-color-scheme: light)">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Games Deck">
+    <meta name="description" content="Sua biblioteca pessoal de jogos Steam">
     <title>Games Deck</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11460,6 +11467,107 @@
             document.addEventListener('focusin', (e) => { const el = e.target.closest && e.target.closest(SEL); if (el) show(el); });
             document.addEventListener('focusout', hide);
             window.addEventListener('scroll', hide, true);
+        })();
+    </script>
+
+    <!-- PWA: manifest gerado em memória + registro do service worker -->
+    <script>
+        (function () {
+            'use strict';
+
+            const START_URL  = '/Games-Deck/gamesdeck.html';
+            const SCOPE      = '/Games-Deck/';
+            const SW_URL     = '/Games-Deck/sw.js';
+            const BG_COLOR   = '#141223';
+            const THEME_DARK = '#5E1DCF';
+
+            /* Renderiza o SVG do favicon num canvas e devolve data URI PNG */
+            function renderIcon(svgSrc, size) {
+                return new Promise(function (resolve) {
+                    var img = new Image();
+                    img.onload = function () {
+                        var c = document.createElement('canvas');
+                        c.width = c.height = size;
+                        var ctx = c.getContext('2d');
+                        /* Fundo arredondado com a cor de background do app */
+                        var r = size * 0.22;
+                        ctx.beginPath();
+                        ctx.moveTo(r, 0); ctx.lineTo(size - r, 0);
+                        ctx.arcTo(size, 0, size, r, r);
+                        ctx.lineTo(size, size - r);
+                        ctx.arcTo(size, size, size - r, size, r);
+                        ctx.lineTo(r, size);
+                        ctx.arcTo(0, size, 0, size - r, r);
+                        ctx.lineTo(0, r);
+                        ctx.arcTo(0, 0, r, 0, r);
+                        ctx.closePath();
+                        ctx.fillStyle = BG_COLOR;
+                        ctx.fill();
+                        /* Logo centralizado com padding de 15% */
+                        var pad  = size * 0.15;
+                        var logoW = size - pad * 2;
+                        var logoH = logoW * (259 / 319); /* proporção do viewBox SVG */
+                        var logoY = (size - logoH) / 2;
+                        ctx.drawImage(img, pad, logoY, logoW, logoH);
+                        resolve(c.toDataURL('image/png'));
+                    };
+                    img.onerror = function () { resolve(null); };
+                    img.src = svgSrc;
+                });
+            }
+
+            async function setupPWA() {
+                var svgSrc = (document.querySelector('link[rel="icon"]') || {}).href;
+                if (!svgSrc) return;
+
+                var png192 = await renderIcon(svgSrc, 192);
+                var png512 = await renderIcon(svgSrc, 512);
+
+                /* apple-touch-icon (iOS / iPadOS) */
+                if (png192) {
+                    var appleLink = document.createElement('link');
+                    appleLink.rel  = 'apple-touch-icon';
+                    appleLink.href = png192;
+                    document.head.appendChild(appleLink);
+                }
+
+                /* Manifest gerado em memória — sem arquivo extra */
+                var icons = [];
+                if (png192) icons.push({ src: png192, sizes: '192x192', type: 'image/png' });
+                if (png512) icons.push({ src: png512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' });
+                if (svgSrc) icons.push({ src: svgSrc, sizes: 'any', type: 'image/svg+xml' });
+
+                var manifest = {
+                    name:             'Games Deck',
+                    short_name:       'GamesDeck',
+                    description:      'Sua biblioteca pessoal de jogos Steam',
+                    start_url:        START_URL,
+                    scope:            SCOPE,
+                    display:          'standalone',
+                    orientation:      'any',
+                    background_color: BG_COLOR,
+                    theme_color:      THEME_DARK,
+                    lang:             'pt-BR',
+                    categories:       ['games', 'entertainment'],
+                    icons:            icons
+                };
+
+                var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+                var manifestUrl = URL.createObjectURL(blob);
+                var link = document.createElement('link');
+                link.rel  = 'manifest';
+                link.href = manifestUrl;
+                document.head.appendChild(link);
+
+                /* Service Worker */
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register(SW_URL, { scope: SCOPE })
+                        .then(function (r) { console.log('[PWA] SW registrado, escopo:', r.scope); })
+                        .catch(function (e) { console.warn('[PWA] Falha ao registrar SW:', e); });
+                }
+            }
+
+            setupPWA();
         })();
     </script>
 </body>
