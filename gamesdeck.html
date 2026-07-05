@@ -3125,6 +3125,49 @@
             border-bottom: 1px solid var(--md-sys-color-outline-variant);
         }
 
+        /* Card de novidade na página do jogo */
+        #gpFomoCard { margin-bottom: 4px; }
+
+        .gp-fomo-card {
+            display: block;
+            border-radius: var(--shape-m);
+            background: linear-gradient(100deg, var(--md-sys-color-fomo-strong), var(--md-sys-color-fomo));
+            color: var(--md-sys-color-on-fomo);
+            padding: 16px 20px;
+            text-decoration: none;
+            box-shadow: 0 4px 16px color-mix(in srgb, var(--md-sys-color-fomo-strong) 30%, transparent);
+            transition: transform .15s, box-shadow .15s;
+        }
+
+        .gp-fomo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px color-mix(in srgb, var(--md-sys-color-fomo-strong) 45%, transparent);
+        }
+
+        .gp-fomo-card__label {
+            font-size: .72rem;
+            font-weight: 700;
+            opacity: .75;
+            margin-bottom: 6px;
+        }
+
+        .gp-fomo-card__title {
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.35;
+            margin-bottom: 6px;
+        }
+
+        .gp-fomo-card__intro {
+            font-size: .84rem;
+            line-height: 1.55;
+            opacity: .85;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
         .gp-about {
             line-height: 1.7;
             font-size: .95rem;
@@ -6290,8 +6333,10 @@
                     </div>
                     <div class="gp-thumbs" id="gpThumbs"></div>
 
+                    <div id="gpFomoCard" hidden></div>
+
                     <section class="gp-section gp-section--inline" id="gpAboutSec" hidden>
-                        <h2 class="gp-section__title">Sobre o jogo</h2>
+                        <h2 class="gp-section__title">Sobre o Jogo</h2>
                         <div class="gp-about" id="gpAbout"></div>
                     </section>
                 </div>
@@ -6302,12 +6347,12 @@
             </div>
 
             <section class="gp-section" id="gpReqSec" hidden>
-                <h2 class="gp-section__title">Requisitos do sistema</h2>
+                <h2 class="gp-section__title">Requisitos do Sistema</h2>
                 <div class="gp-reqs" id="gpReqs"></div>
             </section>
 
             <section class="gp-section" id="gpNewsSec" hidden>
-                <h2 class="gp-section__title">Novidades e atualizações</h2>
+                <h2 class="gp-section__title">Novidades e Atualizações</h2>
                 <div class="gp-news" id="gpNews"></div>
             </section>
 
@@ -7425,13 +7470,13 @@
                         // resposta do ajaxgetadjacentpartnerevents
                         const events = d?.events;
                         if (events?.length) {
-                            const items = events.map(e => ({ title: e.event_name, url: `https://store.steampowered.com/news/app/${appId}`, date: e.announcement_body?.posttime * 1000 || Date.now(), feed: 'Steam' }));
+                            const items = events.map(e => ({ title: e.event_name, url: `https://store.steampowered.com/news/app/${appId}`, date: e.announcement_body?.posttime * 1000 || Date.now(), feed: 'Steam', body: e.announcement_body?.body || '' }));
                             cacheSet(ck, items, TTL.news); return items;
                         }
                         // resposta do GetNewsForApp
                         const newsitems = d?.appnews?.newsitems;
                         if (newsitems?.length) {
-                            const items = newsitems.map(n => ({ title: n.title, url: n.url, date: n.date * 1000, feed: n.feedlabel || '' }));
+                            const items = newsitems.map(n => ({ title: n.title, url: n.url, date: n.date * 1000, feed: n.feedlabel || '', body: n.contents || '' }));
                             cacheSet(ck, items, TTL.news); return items;
                         }
                     }
@@ -9092,7 +9137,7 @@
             async function getNews(appId) {
                 const ck = 'news:' + appId, c = cacheGet(ck); if (c) return c;
                 const d = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=6&maxlength=400`);
-                const items = (d?.appnews?.newsitems || []).map(n => ({ title: n.title, url: n.url, date: n.date * 1000, feed: n.feedlabel || '', author: n.author || '' }));
+                const items = (d?.appnews?.newsitems || []).map(n => ({ title: n.title, url: n.url, date: n.date * 1000, feed: n.feedlabel || '', author: n.author || '', contents: n.contents || '' }));
                 if (items.length) cacheSet(ck, items, TTL.news); return items;
             }
             async function getReviews(appId) {
@@ -9229,6 +9274,7 @@
                 renderCabecalho(appId, full, nomeProvisorio);
                 renderGaleria(appId, full);
                 renderSidebar(appId, full, players, reviews);
+                await renderFomoCard(news, appId);
                 renderSobre(full);
                 renderRequisitos(full);
                 renderNoticias(news);
@@ -9426,6 +9472,49 @@
                 const destac = ordem.filter(o => set.has(o));
                 cats.forEach(c => { if (!destac.includes(c)) destac.push(c); });
                 return destac.slice(0, 8);
+            }
+
+            /* -------------------------- Card de Novidade ------------------------ */
+            function fomoLimparCorpo(s) {
+                if (!s) return '';
+                return s
+                    .replace(/\[img\][^\[]*\[\/img\]/gi, ' ')
+                    .replace(/\{STEAM_CLAN_IMAGE\}[^\s\[\]]*/gi, ' ')
+                    .replace(/\[url=[^\]]*\]/gi, '').replace(/\[\/url\]/gi, '')
+                    .replace(/\[\/?[a-z*][^\]]*\]/gi, ' ')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+            async function renderFomoCard(news, appId) {
+                const el = $('#gpFomoCard');
+                if (!news?.length) { el.hidden = true; return; }
+                const recente = news.reduce((a, b) => b.date > a.date ? b : a);
+                const dias = (Date.now() - recente.date) / 86400000;
+                if (dias > 7) { el.hidden = true; return; }
+                const t = (recente.title || '').toLowerCase();
+                const label = /season|temporada/.test(t) ? '🎯 Nova Temporada'
+                    : /update|patch|atualiza|hotfix|\bv?\d+\.\d+\b/.test(t) ? '🔄️ Atualização Nova'
+                    : /event|evento|festival|holiday|natal|halloween|anniversary|anivers/.test(t) ? '🎉 Evento Ativo'
+                    : /dlc|expansion|expans[aã]o|chapter|cap[ií]tulo/.test(t) ? '✨ Novo Conteúdo'
+                    : dias < 3 ? '🔥 Novidade Fresca' : '🆕 Novidade';
+                let rawBody = recente.body || recente.contents || '';
+                if (!rawBody && appId) {
+                    const d = await steamFetch(`https://store.steampowered.com/events/ajaxgetadjacentpartnerevents/?appid=${appId}&count_before=0&count_after=3&language=portuguese`);
+                    if (d?.events?.length) rawBody = d.events[0].announcement_body?.body || '';
+                    if (!rawBody) {
+                        const d2 = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=3&maxlength=500`);
+                        rawBody = d2?.appnews?.newsitems?.[0]?.contents || '';
+                    }
+                }
+                const intro = fomoLimparCorpo(rawBody);
+                el.innerHTML = `<a class="gp-fomo-card" href="${escapeHtml(recente.url)}" target="_blank" rel="noopener">
+                    <div class="gp-fomo-card__label">${label}</div>
+                    <div class="gp-fomo-card__title">${escapeHtml(recente.title)}</div>
+                    ${intro ? `<div class="gp-fomo-card__intro">${escapeHtml(intro)}</div>` : ''}
+                </a>`;
+                el.hidden = false;
             }
 
             /* ------------------------------ Sobre ----------------------------- */
