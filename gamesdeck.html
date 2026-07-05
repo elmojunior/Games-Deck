@@ -1462,6 +1462,37 @@
         .rail-wrap.at-start { --rail-mask-l: 0px; }
         .rail-wrap.at-end   { --rail-mask-r: 0px; }
 
+        /* ---- "Em Alta na Comunidade": esmaecimento por sobreposição ----
+           Esta seção fica sempre sobre cor sólida (--highlight-bg), então em vez
+           da mask-image (que tem bug de repaint no Firefox) usamos dois gradientes
+           sobrepostos que vão da cor de fundo até transparente nas bordas.
+           100% estável em todos os navegadores. */
+        #wrapEmAlta {
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
+        #wrapEmAlta::before,
+        #wrapEmAlta::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: clamp(32px, 6%, 72px);
+            z-index: 2;
+            pointer-events: none;
+            transition: opacity .2s;
+        }
+        #wrapEmAlta::before {
+            left: 0;
+            background: linear-gradient(to right, var(--highlight-bg), transparent);
+        }
+        #wrapEmAlta::after {
+            right: 0;
+            background: linear-gradient(to left, var(--highlight-bg), transparent);
+        }
+        #wrapEmAlta.at-start::before { opacity: 0; }
+        #wrapEmAlta.at-end::after   { opacity: 0; }
+
         /* Botões de navegação */
         .rail-nav {
             position: absolute;
@@ -8349,6 +8380,8 @@
                     return Math.max(0, rail.children.length * cardW() - wrapEl.offsetWidth);
                 }
                 function applyRailMask(el, atStart, atEnd) {
+                    // "Em Alta" usa sobreposição de gradiente (cor sólida), não mask-image.
+                    if (el.id === 'wrapEmAlta') return;
                     const f = 'clamp(32px,6%,72px)';
                     const m = atStart && atEnd ? 'none'
                         : atStart ? `linear-gradient(to right,black 0%,black calc(100% - ${f}),transparent 100%)`
@@ -8365,6 +8398,8 @@
                     const atStart = off <= 1;
                     const atEnd = off >= max - 1;
                     applyRailMask(wrapEl, atStart, atEnd);
+                    wrapEl.classList.toggle('at-start', atStart);
+                    wrapEl.classList.toggle('at-end', atEnd);
                     prevBtn.disabled = atStart;
                     nextBtn.disabled = atEnd;
                 }
