@@ -27,6 +27,105 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <script>!function () { var t = localStorage.getItem('bib:tema') || ((window.matchMedia && matchMedia('(prefers-color-scheme:light)').matches) ? 'light' : 'dark'); document.documentElement.setAttribute('data-theme', t) }()</script>
+    <script>
+        /* ---- IndexedDB central: stores 'bg' (imagens), 'settings' (blur/opacity), 'library' (jogos) ---- */
+        window.gdb = (function () {
+            var _db = null;
+            var STORES = ['bg', 'settings', 'library'];
+            function open() {
+                if (_db) return Promise.resolve(_db);
+                return new Promise(function (resolve, reject) {
+                    var req = indexedDB.open('gamesdeck-db', 1);
+                    req.onupgradeneeded = function (e) {
+                        var db = e.target.result;
+                        STORES.forEach(function (s) { if (!db.objectStoreNames.contains(s)) db.createObjectStore(s); });
+                    };
+                    req.onsuccess = function (e) { _db = e.target.result; resolve(_db); };
+                    req.onerror = reject;
+                });
+            }
+            function storeGet(store, key) {
+                return open().then(function (db) {
+                    return new Promise(function (resolve) {
+                        var r = db.transaction(store, 'readonly').objectStore(store).get(key);
+                        r.onsuccess = function () { resolve(r.result !== undefined ? r.result : null); };
+                        r.onerror = function () { resolve(null); };
+                    });
+                });
+            }
+            function storeSet(store, key, val) {
+                return open().then(function (db) {
+                    return new Promise(function (resolve, reject) {
+                        var tx = db.transaction(store, 'readwrite');
+                        tx.objectStore(store).put(val, key);
+                        tx.oncomplete = resolve; tx.onerror = reject;
+                    });
+                });
+            }
+            function storeDel(store, key) {
+                return open().then(function (db) {
+                    return new Promise(function (resolve) {
+                        var tx = db.transaction(store, 'readwrite');
+                        tx.objectStore(store).delete(key);
+                        tx.oncomplete = resolve; tx.onerror = resolve;
+                    });
+                });
+            }
+            function storeClear(store) {
+                return open().then(function (db) {
+                    return new Promise(function (resolve) {
+                        var tx = db.transaction(store, 'readwrite');
+                        tx.objectStore(store).clear();
+                        tx.oncomplete = resolve; tx.onerror = resolve;
+                    });
+                });
+            }
+            return {
+                get:   function (store, key) { return storeGet(store, key); },
+                set:   function (store, key, val) { return storeSet(store, key, val); },
+                del:   function (store, key) { return storeDel(store, key); },
+                clear: function (store) { return storeClear(store); },
+                /* Atalhos para compatibilidade com código anterior que usava bgIdb */
+                bgGet: function (key) { return storeGet('bg', key); },
+                bgSet: function (key, val) { return storeSet('bg', key, val); },
+                bgDel: function (key) { return storeDel('bg', key); }
+            };
+        })();
+        /* Alias para compatibilidade com referências a window.bgIdb ainda presentes */
+        window.bgIdb = { get: function(k){return window.gdb.bgGet(k);}, set: function(k,v){return window.gdb.bgSet(k,v);}, del: function(k){return window.gdb.bgDel(k);} };
+
+        /* ---- Aplica imagem de fundo do tema atual (lê tudo do IDB) ---- */
+        window.aplicarBgTema = function () {
+            var tema = document.documentElement.getAttribute('data-theme') || 'dark';
+            Promise.all([
+                window.gdb.bgGet(tema + '-img'),
+                window.gdb.get('settings', tema + '-blur'),
+                window.gdb.get('settings', tema + '-opacity')
+            ]).then(function (res) {
+                var img     = res[0] || '';
+                var blur    = parseFloat(res[1] != null ? res[1] : 0);
+                var opacity = parseFloat(res[2] != null ? res[2] : 1);
+                var layer   = document.getElementById('bgLayer');
+                var overlay = document.getElementById('bgOverlay');
+                if (!layer || !overlay) return;
+                if (img) {
+                    document.documentElement.setAttribute('data-bg', '1');
+                    layer.style.backgroundImage = 'url(' + JSON.stringify(img) + ')';
+                    layer.style.filter = blur > 0 ? 'blur(' + blur + 'px)' : 'none';
+                    overlay.style.opacity = opacity;
+                } else {
+                    document.documentElement.removeAttribute('data-bg');
+                    layer.style.backgroundImage = 'none';
+                    layer.style.filter = 'none';
+                    overlay.style.opacity = '1';
+                }
+            });
+        };
+
+        window.aplicarBgTema();
+        new MutationObserver(window.aplicarBgTema)
+            .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    </script>
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,%3Csvg%20width%3D%22319%22%20height%3D%22259%22%20viewBox%3D%220%200%20319%20259%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M303.704%20102.496C281.53%2023.0171%20252.195%202.66604%20225.123%2010.22C218.594%2012.038%20212.798%2015.339%20208.064%2020.379C194.904%2024.338%20177.333%2028.435%20160.914%2028.435C143.418%2028.435%20124.604%2023.78%20111.235%2019.604C106.285%2013.756%20100.047%2010.021%2092.927%208.03104C65.852%200.476044%2036.516%2020.832%2014.343%20100.31C-7.83097%20179.785%20-3.85297%20250.336%2023.218%20257.894C45.65%20264.15%2080.168%20231.75%20102.835%20173.02C114.928%20169.316%20138.251%20158.678%20158.729%20158.678C177.183%20158.678%20200.495%20160.403%20215.095%20164.291C241.774%20225.45%20273.092%20263.025%20295.951%20256.645C323.034%20249.087%20325.878%20181.979%20303.704%20102.496Z%22%20fill%3D%22url(%23a)%22%2F%3E%3Cpath%20d%3D%22M303.704%2095.929C281.53%2016.45%20252.195%20-3.90497%20225.123%203.65303C218.594%205.47503%20212.798%208.76803%20208.064%2013.812C194.904%2017.775%20177.333%2021.868%20160.914%2021.868C143.418%2021.868%20124.604%2017.213%20111.235%2013.034C106.285%207.18903%20100.047%203.45103%2092.927%201.46403C65.852%20-6.09097%2036.516%2014.265%2014.343%2093.743C-7.82999%20173.221%20-3.85299%20243.773%2023.218%20251.327C45.65%20257.583%2076.886%20218.617%2099.554%20159.886C111.647%20156.182%20138.251%20148.829%20158.726%20148.829C177.18%20148.829%20202.583%20154.801%20217.184%20158.689C239.941%20219.313%20271.967%20259.889%20294.822%20253.516C321.904%20245.959%20325.878%20175.408%20303.704%2095.929Z%22%20fill%3D%22url(%23b)%22%2F%3E%3Cpath%20d%3D%22M148.271%20101.329H130.49V82.897C127.538%2081.864%20124.38%2081.269%20121.076%2081.269C117.933%2081.269%20114.917%2081.8%20112.088%2082.743V101.328H93.884C93.065%20103.985%2092.619%20106.806%2092.619%20109.728C92.619%20113.174%2093.263%20116.463%2094.389%20119.52H112.088V136.713C114.917%20137.656%20117.936%20138.187%20121.076%20138.187C124.38%20138.187%20127.538%20137.596%20130.49%20136.559V119.519H147.773C148.892%20116.462%20149.535%20113.173%20149.535%20109.727C149.536%20106.807%20149.094%20103.985%20148.271%20101.329Z%22%20fill%3D%22url(%23c)%22%2F%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22a%22%20x1%3D%22159.256%22%20y1%3D%226.567%22%20x2%3D%22159.256%22%20y2%3D%22258.66%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20stop-color%3D%22%23300F69%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235E1DCF%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%22170.119%22%20y1%3D%2262.769%22%20x2%3D%22171.119%22%20y2%3D%22154.269%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20stop-color%3D%22%236257A6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23653F8D%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22c%22%20x1%3D%22121.077%22%20y1%3D%2281.269%22%20x2%3D%22120.619%22%20y2%3D%22138.269%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20stop-color%3D%22%239A96E7%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2349457F%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3C%2Fsvg%3E">
     <style>
@@ -237,7 +336,7 @@
             --breadcrumb-link-hover: var(--md-sys-color-on-primary-container);
             --breadcrumb-current: var(--md-sys-color-on-surface);
             --breadcrumb-sep: var(--md-sys-color-on-surface-var);
-            --highlight-bg: #100d1e;
+            --highlight-bg: #151229;
             /* faixa "Em Alta" — quebra escura */
             --footer-bg: #100d1e;
             --footer-text: var(--md-sys-color-on-surface-var);
@@ -289,6 +388,28 @@
         html {
             scroll-behavior: smooth;
         }
+
+        #bgLayer {
+            position: fixed;
+            inset: -80px;
+            z-index: -2;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            pointer-events: none;
+        }
+
+        #bgOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background: var(--md-sys-color-background);
+        }
+
+        /* Quando há imagem de fundo, body e gp-body ficam transparentes */
+        [data-bg="1"] body { background: transparent; }
+        [data-bg="1"] .gp-body { background: transparent; }
 
         body {
             font-family: var(--font);
@@ -785,13 +906,6 @@
             margin-top: 44px;
         }
 
-        .shelf--highlight .rail-wrap::before {
-            background: linear-gradient(to right, var(--highlight-bg) 0%, var(--highlight-bg) 30%, color-mix(in srgb, var(--highlight-bg) 50%, transparent) 65%, transparent 100%);
-        }
-
-        .shelf--highlight .rail-wrap::after {
-            background: linear-gradient(to left, var(--highlight-bg) 0%, var(--highlight-bg) 30%, color-mix(in srgb, var(--highlight-bg) 50%, transparent) 65%, transparent 100%);
-        }
 
         .shelf--highlight,
         .news-sec.shelf--highlight {
@@ -833,40 +947,19 @@
         .hero {
             position: relative;
             margin-top: 20px;
+            padding-left: 16px;
+            padding-right: 16px;
+            margin-left: calc(-1 * clamp(16px, 4vw, 16px));
+            margin-right: calc(-1 * clamp(16px, 4vw, 16px));
             /* border-radius: var(--shape-xl); */
             overflow: hidden;
         }
 
-        /* Fades laterais: suavizam os slides parcialmente visíveis nas bordas */
-        .hero::before,
-        .hero::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: clamp(32px, 6%, 72px);
-            z-index: 1;
-            pointer-events: none;
-            transition: opacity .4s ease;
-        }
-
-        .hero::before {
-            left: 0;
-            background: linear-gradient(to right, var(--md-sys-color-background) 0%, var(--md-sys-color-background) 30%, color-mix(in srgb, var(--md-sys-color-background) 50%, transparent) 65%, transparent 100%);
-        }
-
-        .hero::after {
-            right: 0;
-            background: linear-gradient(to left, var(--md-sys-color-background) 0%, var(--md-sys-color-background) 30%, color-mix(in srgb, var(--md-sys-color-background) 50%, transparent) 65%, transparent 100%);
-        }
-
-        .hero.at-start::before {
-            opacity: 0;
-        }
-
-        .hero.at-end::after {
-            opacity: 0;
-        }
+        /* Fades laterais via mask — sem variáveis CSS para evitar bug de repaint */
+        .hero                  { -webkit-mask-image: linear-gradient(to right, transparent 0, black clamp(32px,6%,72px), black calc(100% - clamp(32px,6%,72px)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, black clamp(32px,6%,72px), black calc(100% - clamp(32px,6%,72px)), transparent 100%); }
+        .hero.at-start         { -webkit-mask-image: linear-gradient(to right, black 0%,                                  black calc(100% - clamp(32px,6%,72px)), transparent 100%); mask-image: linear-gradient(to right, black 0%,                                  black calc(100% - clamp(32px,6%,72px)), transparent 100%); }
+        .hero.at-end           { -webkit-mask-image: linear-gradient(to right, transparent 0, black clamp(32px,6%,72px), black 100%);                                               mask-image: linear-gradient(to right, transparent 0, black clamp(32px,6%,72px), black 100%); }
+        .hero.at-start.at-end  { -webkit-mask-image: none; mask-image: none; }
 
         /* O track agora usa transform para deslizar — dá controle total sobre
    duração e easing, sem depender do scroll nativo do browser. */
@@ -1344,39 +1437,30 @@
             position: relative;
             overflow: hidden;
             container-type: inline-size;
+            /* translateZ força camada de composição própria — corrige bug de repaint
+               de mask-image com container-type no Firefox */
+            transform: translateZ(0);
+            /* padding cria área para as sombras dos cards respirarem; margem negativa
+               devolve esse espaço ao layout para os cards não ficarem menores */
+            padding: 8px 10px;
+            margin: -8px -10px;
+            --rail-fade: clamp(32px, 6%, 72px);
+            --rail-mask-l: var(--rail-fade);
+            --rail-mask-r: var(--rail-fade);
+            -webkit-mask-image: linear-gradient(to right,
+                transparent 0,
+                black var(--rail-mask-l),
+                black calc(100% - var(--rail-mask-r)),
+                transparent 100%);
+            mask-image: linear-gradient(to right,
+                transparent 0,
+                black var(--rail-mask-l),
+                black calc(100% - var(--rail-mask-r)),
+                transparent 100%);
         }
 
-        /* Fades laterais (mesmo padrão do hero) */
-        .rail-wrap::before,
-        .rail-wrap::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 16px;
-            width: clamp(32px, 6%, 72px);
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-            transition: opacity .4s ease;
-        }
-
-        .rail-wrap::before {
-            left: 0;
-            background: linear-gradient(to right, var(--md-sys-color-background) 0%, var(--md-sys-color-background) 30%, color-mix(in srgb, var(--md-sys-color-background) 50%, transparent) 65%, transparent 100%);
-        }
-
-        .rail-wrap::after {
-            right: 0;
-            background: linear-gradient(to left, var(--md-sys-color-background) 0%, var(--md-sys-color-background) 30%, color-mix(in srgb, var(--md-sys-color-background) 50%, transparent) 65%, transparent 100%);
-        }
-
-        .rail-wrap.at-start::before {
-            opacity: 0;
-        }
-
-        .rail-wrap.at-end::after {
-            opacity: 0;
-        }
+        .rail-wrap.at-start { --rail-mask-l: 0px; }
+        .rail-wrap.at-end   { --rail-mask-r: 0px; }
 
         /* Botões de navegação */
         .rail-nav {
@@ -1426,7 +1510,7 @@
         .rail {
             display: flex;
             gap: var(--rail-gap);
-            padding: 6px 2px 16px;
+            padding: 16px 2px 16px;
             will-change: transform;
             transition: transform .45s cubic-bezier(.45, 0, .25, 1);
         }
@@ -1690,6 +1774,128 @@
         }
 
         /* =========================================================================
+   BANNER GRID (capas 16:9 — Sugestões Aleatórias)
+   ========================================================================= */
+        .banner-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-rows: repeat(3, auto);
+            grid-auto-rows: 0;
+            overflow: hidden;
+            gap: 12px;
+            padding: 12px 10px;
+            margin: -8px -10px;
+        }
+
+        .banner-card {
+            position: relative;
+            aspect-ratio: 16/9;
+            border-radius: var(--shape-m);
+            overflow: hidden;
+            box-shadow: var(--elev-1);
+            cursor: pointer;
+            background: var(--md-sys-color-surface-high);
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .banner-card:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: var(--elev-3);
+        }
+
+        .banner-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .banner-card__video {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity .5s;
+            z-index: 1;
+        }
+
+        .banner-card.playing .banner-card__video {
+            opacity: 1;
+        }
+
+        .banner-card__overlay {
+            position: absolute;
+            inset: auto 0 0 0;
+            padding: 32px 14px 12px;
+            background: linear-gradient(0deg, rgba(0,0,0,.85), transparent);
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity .25s, transform .25s;
+            z-index: 2;
+        }
+
+        .banner-card:hover .banner-card__overlay {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .banner-card.playing .banner-card__overlay {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .banner-card__name {
+            font: var(--md-sys-typescale-title-small);
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .banner-card__tags {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            z-index: 3;
+            transition: opacity .3s;
+        }
+
+        .banner-card:hover .banner-card__tags,
+        .banner-card.playing .banner-card__tags {
+            opacity: 0;
+        }
+
+        .banner-card__players {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, .72);
+            color: #fff;
+            backdrop-filter: blur(4px);
+            font-size: .74rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: var(--shape-full);
+            z-index: 3;
+            transition: opacity .3s;
+        }
+
+        .banner-card:hover .banner-card__players,
+        .banner-card.playing .banner-card__players {
+            opacity: 0;
+        }
+
+        .banner-card.skeleton {
+            aspect-ratio: 16/9;
+        }
+
+        /* =========================================================================
    TABS + LISTA RICA
    ========================================================================= */
         .tabs {
@@ -1772,6 +1978,14 @@
 
         .list-item:hover {
             background: var(--md-sys-color-surface-high);
+        }
+
+        :root[data-theme="light"] .shelf--highlight .list-item {
+            background: var(--md-sys-color-surface);
+        }
+
+        :root[data-theme="light"] .shelf--highlight .list-item:hover {
+            background: var(--md-sys-color-surface-container);
         }
 
         .list-item__thumb {
@@ -2090,7 +2304,7 @@
         .news-card {
             break-inside: avoid;
             margin-bottom: 18px;
-            background: transparent;
+            background: var(--md-sys-color-background);
             border: 1px solid var(--md-sys-color-outline);
             border-radius: var(--shape-m);
             overflow: hidden;
@@ -3249,6 +3463,7 @@
         .gp-newsitem {
             display: block;
             padding: 14px 16px;
+            background: var(--md-sys-color-background);
             border: 1px solid var(--md-sys-color-outline);
             border-radius: var(--shape-m);
             text-decoration: none;
@@ -3463,8 +3678,8 @@
             background: linear-gradient(to right,
                     var(--md-sys-color-primary) 0%,
                     var(--md-sys-color-primary) calc(var(--val, 0) * 1%),
-                    var(--md-sys-color-secondary-container) calc(var(--val, 0) * 1%),
-                    var(--md-sys-color-secondary-container) 100%);
+                    color-mix(in srgb, var(--md-sys-color-on-surface) 20%, transparent) calc(var(--val, 0) * 1%),
+                    color-mix(in srgb, var(--md-sys-color-on-surface) 20%, transparent) 100%);
         }
 
         .filter-slider::-webkit-slider-thumb {
@@ -3496,7 +3711,7 @@
         .filter-slider::-moz-range-track {
             height: 16px;
             border-radius: var(--shape-full);
-            background: var(--md-sys-color-secondary-container);
+            background: color-mix(in srgb, var(--md-sys-color-on-surface) 20%, transparent);
         }
 
         .filter-slider::-moz-range-progress {
@@ -5197,6 +5412,79 @@
             box-shadow: 0 0 0 8px color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent);
         }
 
+        /* ---- Seção Configurações de Tema ---- */
+        .bm-tema-sec {
+            margin-top: 48px;
+            padding-top: 32px;
+        }
+
+        .bm-tema-sec__title {
+            font: var(--md-sys-typescale-title-large);
+            margin: 0 0 8px;
+        }
+
+        .bm-tema-sec__desc {
+            font-size: .9rem;
+            color: var(--md-sys-color-on-surface-var);
+            margin: 0 0 24px;
+            line-height: 1.6;
+        }
+
+        .bm-tema-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 700px) {
+            .bm-tema-grid { grid-template-columns: 1fr; }
+        }
+
+        .bm-tema-sub {
+            border: 1px solid var(--md-sys-color-outline-variant);
+            border-radius: var(--shape-m);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .bm-tema-sub__title {
+            font: var(--md-sys-typescale-title-medium);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bm-tema-sub__title svg { flex-shrink: 0; }
+
+        .bm-bg-preview {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: var(--shape-s);
+            border: 1px dashed var(--md-sys-color-outline);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--md-sys-color-on-surface-var);
+            font-size: .82rem;
+        }
+
+        .bm-bg-upload {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bm-bg-upload label.btn {
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        /* ---- fim Configurações de Tema ---- */
         .bm-subhead {
             display: flex;
             align-items: center;
@@ -5904,6 +6192,8 @@
 </head>
 
 <body>
+    <div id="bgLayer" aria-hidden="true"></div>
+    <div id="bgOverlay" aria-hidden="true"></div>
     <div class="app-scrim" aria-hidden="true"></div>
 
     <!-- ================= TOP APP BAR (compartilhada) ================= -->
@@ -6200,7 +6490,24 @@
                 </div>
             </section>
 
-            <section class="shelf" id="secAcervo">
+            <section class="shelf" id="secSugestoes">
+                <div class="shelf__head">
+                    <h2 class="shelf__title">Sugestões Aleatórias</h2>
+                    <span class="shelf__hint">Dicas de jogos aleatórios para curtir este momento.</span>
+                </div>
+                <div class="banner-grid" id="gridSugestoes">
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                    <div class="banner-card skeleton"></div>
+                </div>
+            </section>
+
+            <section class="shelf shelf--highlight" id="secAcervo">
                 <div class="shelf__head">
                     <h2 class="shelf__title">Explorar o Acervo</h2>
                     <span class="shelf__hint" id="acervoContagem"></span>
@@ -6472,6 +6779,78 @@
                 </table>
             </div>
 
+            <section class="bm-tema-sec" id="secTemaBg">
+                <h2 class="bm-tema-sec__title">Configurações de Tema</h2>
+                <p class="bm-tema-sec__desc">Define uma imagem de fundo para cada tema. A imagem fica por detrás da cor de fundo da página, que funciona como uma camada de sobreposição — ajuste a opacidade para deixar mais ou menos a imagem aparecer. O blur suaviza a imagem para não distrair do conteúdo. As imagens e configurações são salvas no navegador e incluídas no backup JSON.</p>
+                <div class="bm-tema-grid">
+
+                    <div class="bm-tema-sub" id="temaSubLight">
+                        <h3 class="bm-tema-sub__title">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true" style="fill:currentColor">
+                                <path d="M424.5 355.1C449 329.2 464 294.4 464 256C464 176.5 399.5 112 320 112C240.5 112 176 176.5 176 256C176 294.4 191 329.2 215.5 355.1C236.8 377.5 260.4 409.1 268.8 448L371.2 448C379.6 409 403.2 377.5 424.5 355.1zM459.3 388.1C435.7 413 416 443.4 416 477.7L416 496C416 540.2 380.2 576 336 576L304 576C259.8 576 224 540.2 224 496L224 477.7C224 443.4 204.3 413 180.7 388.1C148 353.7 128 307.2 128 256C128 150 214 64 320 64C426 64 512 150 512 256C512 307.2 492 353.7 459.3 388.1zM272 248C272 261.3 261.3 272 248 272C234.7 272 224 261.3 224 248C224 199.4 263.4 160 312 160C325.3 160 336 170.7 336 184C336 197.3 325.3 208 312 208C289.9 208 272 225.9 272 248z" />
+                            </svg>
+                            Tema Claro
+                        </h3>
+                        <div class="bm-bg-preview" id="bgPreviewLight">Nenhuma imagem</div>
+                        <div class="filter-group">
+                            <h3 class="filter-group__title">Imagem de fundo</h3>
+                            <div class="bm-bg-upload">
+                                <label class="btn btn--tonal" for="bgFileLight">Escolher arquivo</label>
+                                <input type="file" id="bgFileLight" accept="image/*" hidden>
+                                <button class="btn btn--text" id="bgRemoveLight" type="button">Remover</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <h3 class="filter-group__title">Opacidade da sobreposição <span class="filter-nota-val" id="bgOpacityLightVal">100%</span></h3>
+                            <div class="filter-slider-wrap">
+                                <input type="range" class="filter-slider" id="bgOpacityLight" min="0" max="100" step="1" value="100" style="--val: 100;">
+                                <div class="filter-slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <h3 class="filter-group__title">Blur da imagem <span class="filter-nota-val" id="bgBlurLightVal">0px</span></h3>
+                            <div class="filter-slider-wrap">
+                                <input type="range" class="filter-slider" id="bgBlurLight" min="0" max="40" step="1" value="0" style="--val: 0;">
+                                <div class="filter-slider-labels"><span>0px</span><span>20px</span><span>40px</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bm-tema-sub" id="temaSubDark">
+                        <h3 class="bm-tema-sub__title">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true" style="fill:currentColor">
+                                <path d="M420.9 448C428.2 425.7 442.8 405.5 459.3 388.1C492 353.7 512 307.2 512 256C512 150 426 64 320 64C214 64 128 150 128 256C128 307.2 148 353.7 180.7 388.1C197.2 405.5 211.9 425.7 219.1 448L420.8 448zM416 496L224 496L224 512C224 556.2 259.8 592 304 592L336 592C380.2 592 416 556.2 416 512L416 496zM312 176C272.2 176 240 208.2 240 248C240 261.3 229.3 272 216 272C202.7 272 192 261.3 192 248C192 181.7 245.7 128 312 128C325.3 128 336 138.7 336 152C336 165.3 325.3 176 312 176z" />
+                            </svg>
+                            Tema Escuro
+                        </h3>
+                        <div class="bm-bg-preview" id="bgPreviewDark">Nenhuma imagem</div>
+                        <div class="filter-group">
+                            <h3 class="filter-group__title">Imagem de fundo</h3>
+                            <div class="bm-bg-upload">
+                                <label class="btn btn--tonal" for="bgFileDark">Escolher arquivo</label>
+                                <input type="file" id="bgFileDark" accept="image/*" hidden>
+                                <button class="btn btn--text" id="bgRemoveDark" type="button">Remover</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <h3 class="filter-group__title">Opacidade da sobreposição <span class="filter-nota-val" id="bgOpacityDarkVal">100%</span></h3>
+                            <div class="filter-slider-wrap">
+                                <input type="range" class="filter-slider" id="bgOpacityDark" min="0" max="100" step="1" value="100" style="--val: 100;">
+                                <div class="filter-slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <h3 class="filter-group__title">Blur da imagem <span class="filter-nota-val" id="bgBlurDarkVal">0px</span></h3>
+                            <div class="filter-slider-wrap">
+                                <input type="range" class="filter-slider" id="bgBlurDark" min="0" max="40" step="1" value="0" style="--val: 0;">
+                                <div class="filter-slider-labels"><span>0px</span><span>20px</span><span>40px</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
             <div style="margin-top: 48px; display: flex; justify-content: center;">
                 <button class="btn btn--text-error" id="bmLimparDados" type="button"
                     title="Apagar todos os jogos da biblioteca">Limpar Dados</button>
@@ -6595,39 +6974,39 @@
             { nome: "Counter-Strike 2", steam_url: "https://store.steampowered.com/app/730/" },
             { nome: "Dota 2", steam_url: "https://store.steampowered.com/app/570/" },
             { nome: "PUBG: BATTLEGROUNDS", steam_url: "https://store.steampowered.com/app/578080/" },
-            // { nome: "Apex Legends", steam_url: "https://store.steampowered.com/app/1172470/" },
-            // { nome: "Bongo Cat", steam_url: "https://store.steampowered.com/app/3419430/" },
-            // { nome: "Rust", steam_url: "https://store.steampowered.com/app/252490/" },
-            // { nome: "The Binding of Isaac: Rebirth", steam_url: "https://store.steampowered.com/app/250900/" },
-            // { nome: "Delta Force", steam_url: "https://store.steampowered.com/app/2507950/" },
-            // { nome: "Wallpaper Engine", steam_url: "https://store.steampowered.com/app/431960/" },
-            // { nome: "Slay the Spire 2", steam_url: "https://store.steampowered.com/app/2868840/" },
-            // { nome: "Stardew Valley", steam_url: "https://store.steampowered.com/app/413150/" },
-            // { nome: "Grand Theft Auto V", steam_url: "https://store.steampowered.com/app/271590/" },
-            // { nome: "Path of Exile 2", steam_url: "https://store.steampowered.com/app/2694490/" },
-            // { nome: "NARAKA: BLADEPOINT", steam_url: "https://store.steampowered.com/app/1203220/" },
-            // { nome: "Dead by Daylight", steam_url: "https://store.steampowered.com/app/381210/" },
-            // { nome: "Don't Starve Together", steam_url: "https://store.steampowered.com/app/322330/" },
-            // { nome: "Cyberpunk 2077", steam_url: "https://store.steampowered.com/app/1091500/" },
-            // { nome: "War Thunder", steam_url: "https://store.steampowered.com/app/236390/" },
-            // { nome: "Destiny 2", steam_url: "https://store.steampowered.com/app/1085660/" },
-            // { nome: "Warframe", steam_url: "https://store.steampowered.com/app/230410/" },
-            // { nome: "Limbus Company", steam_url: "https://store.steampowered.com/app/1973530/" },
-            // { nome: "Geometry Dash", steam_url: "https://store.steampowered.com/app/322170/" },
-            // { nome: "7 Days to Die", steam_url: "https://store.steampowered.com/app/251570/" },
-            // { nome: "Marvel Rivals", steam_url: "https://store.steampowered.com/app/2767030/" },
-            // { nome: "Baldur's Gate 3", steam_url: "https://store.steampowered.com/app/1086940/" },
-            // { nome: "Palworld", steam_url: "https://store.steampowered.com/app/1623730/" },
-            // { nome: "VRChat", steam_url: "https://store.steampowered.com/app/438100/" },
-            // { nome: "Tom Clancy's Rainbow Six Siege", steam_url: "https://store.steampowered.com/app/359550/" },
-            // { nome: "Team Fortress 2", steam_url: "https://store.steampowered.com/app/440/" },
-            // { nome: "DayZ", steam_url: "https://store.steampowered.com/app/221100/" },
-            // { nome: "Sid Meier's Civilization VI", steam_url: "https://store.steampowered.com/app/289070/" },
-            // { nome: "Euro Truck Simulator 2", steam_url: "https://store.steampowered.com/app/227300/" },
-            // { nome: "Red Dead Redemption 2", steam_url: "https://store.steampowered.com/app/1174180/" },
-            // { nome: "Terraria", steam_url: "https://store.steampowered.com/app/105600/" },
-            // { nome: "ARK: Survival Ascended", steam_url: "https://store.steampowered.com/app/2399830/" },
-            // { nome: "Mount & Blade II: Bannerlord", steam_url: "https://store.steampowered.com/app/261550/" },
+            { nome: "Apex Legends", steam_url: "https://store.steampowered.com/app/1172470/" },
+            { nome: "Bongo Cat", steam_url: "https://store.steampowered.com/app/3419430/" },
+            { nome: "Rust", steam_url: "https://store.steampowered.com/app/252490/" },
+            { nome: "The Binding of Isaac: Rebirth", steam_url: "https://store.steampowered.com/app/250900/" },
+            { nome: "Delta Force", steam_url: "https://store.steampowered.com/app/2507950/" },
+            { nome: "Wallpaper Engine", steam_url: "https://store.steampowered.com/app/431960/" },
+            { nome: "Slay the Spire 2", steam_url: "https://store.steampowered.com/app/2868840/" },
+            { nome: "Stardew Valley", steam_url: "https://store.steampowered.com/app/413150/" },
+            { nome: "Grand Theft Auto V", steam_url: "https://store.steampowered.com/app/271590/" },
+            { nome: "Path of Exile 2", steam_url: "https://store.steampowered.com/app/2694490/" },
+            { nome: "NARAKA: BLADEPOINT", steam_url: "https://store.steampowered.com/app/1203220/" },
+            { nome: "Dead by Daylight", steam_url: "https://store.steampowered.com/app/381210/" },
+            { nome: "Don't Starve Together", steam_url: "https://store.steampowered.com/app/322330/" },
+            { nome: "Cyberpunk 2077", steam_url: "https://store.steampowered.com/app/1091500/" },
+            { nome: "War Thunder", steam_url: "https://store.steampowered.com/app/236390/" },
+            { nome: "Destiny 2", steam_url: "https://store.steampowered.com/app/1085660/" },
+            { nome: "Warframe", steam_url: "https://store.steampowered.com/app/230410/" },
+            { nome: "Limbus Company", steam_url: "https://store.steampowered.com/app/1973530/" },
+            { nome: "Geometry Dash", steam_url: "https://store.steampowered.com/app/322170/" },
+            { nome: "7 Days to Die", steam_url: "https://store.steampowered.com/app/251570/" },
+            { nome: "Marvel Rivals", steam_url: "https://store.steampowered.com/app/2767030/" },
+            { nome: "Baldur's Gate 3", steam_url: "https://store.steampowered.com/app/1086940/" },
+            { nome: "Palworld", steam_url: "https://store.steampowered.com/app/1623730/" },
+            { nome: "VRChat", steam_url: "https://store.steampowered.com/app/438100/" },
+            { nome: "Tom Clancy's Rainbow Six Siege", steam_url: "https://store.steampowered.com/app/359550/" },
+            { nome: "Team Fortress 2", steam_url: "https://store.steampowered.com/app/440/" },
+            { nome: "DayZ", steam_url: "https://store.steampowered.com/app/221100/" },
+            { nome: "Sid Meier's Civilization VI", steam_url: "https://store.steampowered.com/app/289070/" },
+            { nome: "Euro Truck Simulator 2", steam_url: "https://store.steampowered.com/app/227300/" },
+            { nome: "Red Dead Redemption 2", steam_url: "https://store.steampowered.com/app/1174180/" },
+            { nome: "Terraria", steam_url: "https://store.steampowered.com/app/105600/" },
+            { nome: "ARK: Survival Ascended", steam_url: "https://store.steampowered.com/app/2399830/" },
+            { nome: "Mount & Blade II: Bannerlord", steam_url: "https://store.steampowered.com/app/261550/" },
             { nome: "DAVE THE DIVER", steam_url: "https://store.steampowered.com/app/1868140/" },
             { nome: "ELDEN RING", steam_url: "https://store.steampowered.com/app/1245620/" },
             { nome: "Diablo® IV", steam_url: "https://store.steampowered.com/app/2344520/" },
@@ -6635,19 +7014,17 @@
         ];
 
         /* =========================================================================
-           Armazenamento da lista (JSON no localStorage) + Exportar / Importar / Editar
+           Armazenamento da lista (IndexedDB) + Exportar / Importar / Editar
            -------------------------------------------------------------------------
-           A lista acima (meusJogosSeed) é só a SEMENTE inicial. A partir da primeira
-           carga, a fonte da verdade passa a ser o JSON gravado em localStorage sob a
-           chave 'bib:jogos'. Isso permite adicionar/remover jogos e importar um
-           arquivo sem precisar editar este arquivo à mão — e funciona em file:///
-           (sem servidor), já que não usamos fetch() de arquivo local.
+           A lista acima (meusJogosSeed) é só a SEMENTE inicial. A fonte da verdade
+           é o IndexedDB (store 'library', chave 'jogos'). Na primeira execução após
+           migração, os dados do localStorage são copiados para IDB e removidos.
+           window.bibStoreReady: Promise que resolve quando a lista já está populada.
            ========================================================================= */
         (function () {
-            const KEY = 'bib:jogos';
             const CACHE_PREFIX = 'bibsteam:v2:';
             const appIdDe = (u) => { const m = (u || '').match(/\/app\/(\d+)/); return m ? m[1] : null; };
-            const salvar = (l) => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) { console.error('Falha ao gravar biblioteca:', e); } };
+            const salvar = (l) => window.gdb.set('library', 'jogos', l).catch(e => console.error('Falha ao gravar biblioteca:', e));
 
             const cacheGet = (key) => {
                 try {
@@ -6659,12 +7036,29 @@
                 try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), ttl, v: value })); } catch { }
             };
 
-            let lista;
-            try { const s = localStorage.getItem(KEY); const a = s ? JSON.parse(s) : null; lista = Array.isArray(a) ? a : null; } catch (e) { lista = null; }
-            if (!lista) { lista = meusJogosSeed.slice(); salvar(lista); }
-
-            // Exposto globalmente: as páginas leem 'meusJogos' como sempre.
+            let lista = [];
             window.meusJogos = lista;
+
+            /* Carrega de IDB, com migração automática de localStorage */
+            window.bibStoreReady = window.gdb.get('library', 'jogos').then(idbData => {
+                if (Array.isArray(idbData) && idbData.length) {
+                    lista = idbData;
+                } else {
+                    /* Migração: tenta ler do localStorage legado */
+                    try {
+                        const s = localStorage.getItem('bib:jogos');
+                        const a = s ? JSON.parse(s) : null;
+                        lista = Array.isArray(a) && a.length ? a : meusJogosSeed.slice();
+                    } catch { lista = meusJogosSeed.slice(); }
+                    /* Persiste no IDB e remove entrada legada */
+                    salvar(lista);
+                    localStorage.removeItem('bib:jogos');
+                }
+                window.meusJogos = lista;
+            }).catch(() => {
+                lista = meusJogosSeed.slice();
+                window.meusJogos = lista;
+            });
 
             window.bibStore = {
                 listar() { return lista; },
@@ -6706,14 +7100,14 @@
                     if (i < 0) return false;
                     lista.splice(i, 1); salvar(lista); return true;
                 },
-                exportar() {
+                async exportar() {
                     const toISO = (ts) => {
                         if (!ts) return null;
                         const d = new Date(ts);
                         if (isNaN(d.getTime())) return null;
                         return d.toISOString().split('T')[0];
                     };
-                    const exportavel = lista.map(j => {
+                    const jogos = lista.map(j => {
                         const id = appIdDe(j.steam_url);
                         const d = cacheGet('details:' + id) || {};
                         const jogoExp = { ...j };
@@ -6723,6 +7117,17 @@
                         if (d.categorias && d.categorias.length) jogoExp.recursos = d.categorias;
                         return jogoExp;
                     });
+                    const bgTema = {};
+                    await Promise.all(['light', 'dark'].map(async t => {
+                        const img     = await window.gdb.bgGet(t + '-img') || '';
+                        const blur    = await window.gdb.get('settings', t + '-blur');
+                        const opacity = await window.gdb.get('settings', t + '-opacity');
+                        const blurVal = parseFloat(blur != null ? blur : 0);
+                        const opVal   = parseFloat(opacity != null ? opacity : 1);
+                        if (img || blurVal !== 0 || opVal !== 1)
+                            bgTema[t] = { img, blur: blurVal, opacity: opVal };
+                    }));
+                    const exportavel = { versao: 2, jogos, ...(Object.keys(bgTema).length ? { tema: bgTema } : {}) };
                     const blob = new Blob([JSON.stringify(exportavel, null, 2)], { type: 'application/json' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
@@ -6730,15 +7135,26 @@
                     document.body.appendChild(a); a.click(); a.remove();
                     setTimeout(() => URL.revokeObjectURL(a.href), 1500);
                 },
+                /* importar retorna { ok, total, novos } para operações síncronas de lista;
+                   a restauração do tema é async em background — o chamador deve aguardar
+                   temaRestaurado (Promise) se precisar saber quando terminou. */
                 importar(texto, opts) {
                     const mesclar = !!(opts && opts.mesclar);
                     let dados;
                     try { dados = JSON.parse(texto); } catch (e) { return { ok: false, msg: 'Arquivo não é um JSON válido.' }; }
-                    if (!Array.isArray(dados)) return { ok: false, msg: 'O JSON precisa ser uma lista (array) de jogos.' };
-                    const validos = dados.filter(j => j && appIdDe(j.steam_url));
+                    /* Suporta formato antigo (array) e novo ({ versao, jogos, tema }) */
+                    let jogosArr, temaDados = null;
+                    if (Array.isArray(dados)) {
+                        jogosArr = dados;
+                    } else if (dados && Array.isArray(dados.jogos)) {
+                        jogosArr = dados.jogos;
+                        temaDados = dados.tema || null;
+                    } else {
+                        return { ok: false, msg: 'Formato de arquivo não reconhecido.' };
+                    }
+                    const validos = jogosArr.filter(j => j && appIdDe(j.steam_url));
                     if (!validos.length) return { ok: false, msg: 'Nenhum jogo válido (com link /app/) encontrado.' };
                     const base = mesclar ? lista.slice() : [];
-                    const vistos = new Set(base.map(j => appIdDe(j.steam_url)));
                     let novos = 0;
                     validos.forEach(j => {
                         const id = appIdDe(j.steam_url);
@@ -6776,12 +7192,8 @@
 
                         let jogo = base.find(x => appIdDe(x.steam_url) === id);
                         if (!jogo) {
-                            jogo = {
-                                nome: j.nome,
-                                steam_url: j.steam_url
-                            };
-                            base.push(jogo);
-                            novos++;
+                            jogo = { nome: j.nome, steam_url: j.steam_url };
+                            base.push(jogo); novos++;
                         }
                         const aq = j.aquisicao || j.data_aquisicao;
                         if (aq) jogo.aquisicao = aq;
@@ -6794,12 +7206,25 @@
                         if (imv) jogo.img_v = imv;
                     });
                     salvar(base);
-                    // Recarrega lista na memória para refletir no painel atual se necessário
                     lista = base;
                     window.meusJogos = lista;
+                    // Restaura configurações de tema se presentes no backup (async, em background)
+                    if (temaDados && typeof temaDados === 'object') {
+                        Promise.all(['light', 'dark'].map(async t => {
+                            const cfg = temaDados[t];
+                            if (!cfg) return;
+                            if (cfg.img)      await window.gdb.bgSet(t + '-img', cfg.img).catch(() => {});
+                            if (cfg.blur     != null) await window.gdb.set('settings', t + '-blur',    cfg.blur).catch(() => {});
+                            if (cfg.opacity  != null) await window.gdb.set('settings', t + '-opacity', cfg.opacity).catch(() => {});
+                        })).then(() => { if (window.aplicarBgTema) window.aplicarBgTema(); });
+                    }
                     return { ok: true, total: base.length, novos: novos };
                 },
-                resetar() { localStorage.removeItem(KEY); }
+                resetar() {
+                    lista = [];
+                    window.meusJogos = lista;
+                    window.gdb.clear('library').catch(() => {});
+                }
             };
         })();
 
@@ -7094,7 +7519,7 @@
                 if (btnLimpar) {
                     btnLimpar.addEventListener('click', () => {
                         if (confirm('ATENÇÃO: Isso irá apagar permanentemente todos os jogos registrados na biblioteca. Deseja continuar?')) {
-                            localStorage.setItem('bib:jogos', JSON.stringify([]));
+                            window.bibStore.resetar();
                             location.reload();
                         }
                     });
@@ -7216,6 +7641,94 @@
 
                 q('bmExport').addEventListener('click', () => window.bibStore.exportar());
 
+                /* ---- Configurações de Tema (imagem de fundo) ---- */
+                (function () {
+                    function setSliderVal(el, pct) {
+                        if (el) el.style.setProperty('--val', pct);
+                    }
+
+                    function carregarPreview(tema) {
+                        var sfx = tema === 'light' ? 'Light' : 'Dark';
+                        Promise.all([
+                            window.gdb.bgGet(tema + '-img'),
+                            window.gdb.get('settings', tema + '-blur'),
+                            window.gdb.get('settings', tema + '-opacity')
+                        ]).then(function (res) {
+                            var img     = res[0] || null;
+                            var blur    = parseFloat(res[1] != null ? res[1] : 0);
+                            var opacity = parseFloat(res[2] != null ? res[2] : 1);
+                            var opPct   = Math.round(opacity * 100);
+
+                            var rangeOp  = q('bgOpacity' + sfx);
+                            var valOp    = q('bgOpacity' + sfx + 'Val');
+                            if (rangeOp) { rangeOp.value = opPct; setSliderVal(rangeOp, opPct); }
+                            if (valOp)   valOp.textContent = opPct + '%';
+
+                            var rangeBlur = q('bgBlur' + sfx);
+                            var valBlur   = q('bgBlur' + sfx + 'Val');
+                            if (rangeBlur) { rangeBlur.value = blur; setSliderVal(rangeBlur, (blur / 40) * 100); }
+                            if (valBlur)   valBlur.textContent = blur + 'px';
+
+                            var prev = q('bgPreview' + sfx);
+                            if (!prev) return;
+                            if (img) { prev.style.backgroundImage = 'url(' + JSON.stringify(img) + ')'; prev.textContent = ''; }
+                            else { prev.style.backgroundImage = 'none'; prev.textContent = 'Nenhuma imagem'; }
+                        });
+                    }
+
+                    ['light', 'dark'].forEach(function (tema) {
+                        var sfx = tema === 'light' ? 'Light' : 'Dark';
+                        carregarPreview(tema);
+
+                        /* Arquivo de imagem — IndexedDB */
+                        var fileInput = q('bgFile' + sfx);
+                        if (fileInput) fileInput.addEventListener('change', function () {
+                            var file = fileInput.files && fileInput.files[0];
+                            if (!file) return;
+                            var reader = new FileReader();
+                            reader.onload = function () {
+                                window.gdb.bgSet(tema + '-img', reader.result).then(function () {
+                                    carregarPreview(tema);
+                                    if (window.aplicarBgTema) window.aplicarBgTema();
+                                }).catch(function () { alert('Não foi possível salvar a imagem.'); });
+                            };
+                            reader.readAsDataURL(file);
+                        });
+
+                        /* Remover imagem */
+                        var removeBtn = q('bgRemove' + sfx);
+                        if (removeBtn) removeBtn.addEventListener('click', function () {
+                            window.gdb.bgDel(tema + '-img').then(function () {
+                                if (fileInput) fileInput.value = '';
+                                carregarPreview(tema);
+                                if (window.aplicarBgTema) window.aplicarBgTema();
+                            });
+                        });
+
+                        /* Opacidade (slider 0-100, salvo como 0-1 no IDB) */
+                        var rangeOp = q('bgOpacity' + sfx);
+                        if (rangeOp) rangeOp.addEventListener('input', function () {
+                            var pct = parseInt(rangeOp.value, 10);
+                            setSliderVal(rangeOp, pct);
+                            window.gdb.set('settings', tema + '-opacity', parseFloat((pct / 100).toFixed(2)));
+                            var el = q('bgOpacity' + sfx + 'Val');
+                            if (el) el.textContent = pct + '%';
+                            if (window.aplicarBgTema) window.aplicarBgTema();
+                        });
+
+                        /* Blur */
+                        var rangeBlur = q('bgBlur' + sfx);
+                        if (rangeBlur) rangeBlur.addEventListener('input', function () {
+                            var v = parseInt(rangeBlur.value, 10);
+                            setSliderVal(rangeBlur, (v / 40) * 100);
+                            window.gdb.set('settings', tema + '-blur', v);
+                            var el = q('bgBlur' + sfx + 'Val');
+                            if (el) el.textContent = v + 'px';
+                            if (window.aplicarBgTema) window.aplicarBgTema();
+                        });
+                    });
+                })();
+
                 let atualizandoTodos = false, cancelarTodos = false;
                 q('bmRefreshAll').addEventListener('click', async () => {
                     const btn = q('bmRefreshAll');
@@ -7285,8 +7798,9 @@
                 });
             }
 
-            if (document.readyState !== 'loading') ligar();
-            else document.addEventListener('DOMContentLoaded', ligar);
+            const startGerenciar = () => (window.bibStoreReady || Promise.resolve()).then(ligar);
+            if (document.readyState !== 'loading') startGerenciar();
+            else document.addEventListener('DOMContentLoaded', startGerenciar);
         })();
 
     </script>
@@ -7605,7 +8119,7 @@
                 setupTopBarScroll(); setupChips(); setupBusca(); setupAcervoToggle();
 
                 renderHeroPreliminar();
-                renderRecentes(); renderLancamentos(); renderEmAltaPreliminar(); renderTabsEAcervo();
+                renderRecentes(); renderSugestoes(); renderLancamentos(); renderEmAltaPreliminar(); renderTabsEAcervo();
 
                 setStatus(invalidos ? `${invalidos} link(s) ignorado(s). Buscando dados da Steam…` : 'Buscando dados da Steam…');
                 enriquecer();
@@ -7637,7 +8151,8 @@
                     const [players, details, news, reviews] = await Promise.all([getPlayers(jogo.appId), getDetails(jogo.appId), getNews(jogo.appId), getReviews(jogo.appId)]);
                     jogo.players = players; jogo.details = details; jogo.news = news || []; jogo.reviews = reviews;
                     if (players) online += players;
-                    avaliarFomo(jogo); if (jogo.temFomo) comNov++;
+                    avaliarFomo(jogo);
+                    if (jogo.temFomo) { comNov++; renderEventos(); }
                     feitos++;
                     $('#statOnline').textContent = fmtNum.format(online);
                     $('#statNovidades').textContent = fmtNum.format(comNov);
@@ -7647,7 +8162,7 @@
                 }));
 
                 renderHero(); renderFomoBanner(); renderEventos(); renderEmAlta();
-                renderLancamentos(); renderNoticias(); renderTabsEAcervo();
+                renderLancamentos(); renderSugestoes(); renderNoticias(); renderTabsEAcervo();
                 setLoadBar(100, true);
                 setStatus(`Pronto — ${JOGOS.length} jogos · ${comNov} com novidades.`);
                 setTimeout(window.marcarOverflowBiblioteca, 150);
@@ -7724,7 +8239,8 @@
                 const slideOnly = slideEl.offsetWidth;
                 const trackW = track.offsetWidth;
                 if (idx === 0) return 0;
-                if (idx === n - 1) return -(n - 1) * slideW + (trackW - slideOnly);
+                const trackPad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+                if (idx === n - 1) return -(n - 1) * slideW + (trackW - slideOnly) - trackPad;
                 return -idx * slideW + (trackW - slideOnly) / 2;
             }
 
@@ -7832,6 +8348,15 @@
                 function maxOff() {
                     return Math.max(0, rail.children.length * cardW() - wrapEl.offsetWidth);
                 }
+                function applyRailMask(el, atStart, atEnd) {
+                    const f = 'clamp(32px,6%,72px)';
+                    const m = atStart && atEnd ? 'none'
+                        : atStart ? `linear-gradient(to right,black 0%,black calc(100% - ${f}),transparent 100%)`
+                        : atEnd   ? `linear-gradient(to right,transparent 0,black ${f},black 100%)`
+                        :           `linear-gradient(to right,transparent 0,black ${f},black calc(100% - ${f}),transparent 100%)`;
+                    el.style.webkitMaskImage = m;
+                    el.style.maskImage = m;
+                }
                 function apply(off) {
                     const max = maxOff();
                     off = Math.max(0, Math.min(off, max));
@@ -7839,8 +8364,7 @@
                     rail.style.transform = `translateX(${-off}px)`;
                     const atStart = off <= 1;
                     const atEnd = off >= max - 1;
-                    wrapEl.classList.toggle('at-start', atStart);
-                    wrapEl.classList.toggle('at-end', atEnd);
+                    applyRailMask(wrapEl, atStart, atEnd);
                     prevBtn.disabled = atStart;
                     nextBtn.disabled = atEnd;
                 }
@@ -7959,6 +8483,84 @@
                 rail.innerHTML = '';
                 lista.forEach(j => rail.appendChild(criarPoster(j)));
                 setupRailCarousel(wrap);
+            }
+
+            /* ----------------------- SUGESTÕES ALEATÓRIAS --------------------- */
+            // Ordem embaralhada fixada na carga da página para não mudar durante re-renders.
+            let sugestoesOrdem = null;
+            function renderSugestoes() {
+                const grid = $('#gridSugestoes');
+                if (!grid) return;
+                if (!sugestoesOrdem) {
+                    sugestoesOrdem = [...JOGOS].sort(() => Math.random() - 0.5);
+                }
+                grid.innerHTML = '';
+                sugestoesOrdem.slice(0, 8).forEach(j => grid.appendChild(criarBannerCard(j)));
+            }
+            function criarBannerCard(jogo) {
+                const el = document.createElement('article');
+                el.className = 'banner-card';
+                el.dataset.appid = jogo.appId;
+                const img = document.createElement('img');
+                img.src = jogo.img || `${CDN}/${jogo.appId}/header.jpg`;
+                img.alt = escapeHtml(jogo.nome);
+                img.loading = 'lazy';
+                img.onerror = function () { bannerFallback(this, jogo.nome); };
+                el.appendChild(img);
+
+                // Tags (fomo chip) — topo esquerdo, somem no hover
+                const tags = document.createElement('div');
+                tags.className = 'banner-card__tags';
+                if (jogo.temFomo) tags.insertAdjacentHTML('beforeend', `<span class="fomo-chip">${jogo.fomoLabel}</span>`);
+                el.appendChild(tags);
+
+                // Players — pílula bottom-right, sem ícone, some no hover
+                if (jogo.players != null) {
+                    const pl = document.createElement('span');
+                    pl.className = 'banner-card__players';
+                    pl.textContent = fmtNum.format(jogo.players);
+                    el.appendChild(pl);
+                }
+
+                const overlay = document.createElement('div');
+                overlay.className = 'banner-card__overlay';
+                overlay.innerHTML = `<div class="banner-card__name">${escapeHtml(jogo.nome)}</div>`;
+                el.appendChild(overlay);
+                el.addEventListener('click', () => abrirSheet(jogo));
+
+                // Vídeo no hover — montado só quando há dados (pode não existir ainda no render inicial)
+                function montarVideoHover() {
+                    const video = jogo.details?.video;
+                    if (!video || (!video.direto && !video.hls)) return;
+                    if (el._videoHoverReady) return;
+                    el._videoHoverReady = true;
+                    let videoEl = null, hoverTimer = null;
+                    const tocar = () => {
+                        if (videoEl) return;
+                        videoEl = document.createElement('video');
+                        videoEl.className = 'banner-card__video';
+                        videoEl.muted = true; videoEl.loop = true; videoEl.playsInline = true;
+                        videoEl.setAttribute('muted', 'true');
+                        if (video.direto) videoEl.src = video.direto;
+                        el.insertBefore(videoEl, overlay);
+                        if (video.hls && window.tocarHls) {
+                            window.tocarHls(videoEl, video.hls, () => { videoEl.remove(); videoEl = null; el.classList.remove('playing'); });
+                        }
+                        videoEl.play().catch(() => {});
+                        el.classList.add('playing');
+                    };
+                    const parar = () => {
+                        clearTimeout(hoverTimer);
+                        if (videoEl) { videoEl.pause(); if (videoEl._hls) videoEl._hls.destroy(); videoEl.remove(); videoEl = null; }
+                        el.classList.remove('playing');
+                    };
+                    el.addEventListener('mouseenter', () => { hoverTimer = setTimeout(tocar, 300); });
+                    el.addEventListener('mouseleave', parar);
+                }
+                // Tenta agora; se ainda sem dados, será chamado por atualizarCardsDoJogo.
+                montarVideoHover();
+                el._montarVideoHover = montarVideoHover;
+                return el;
             }
 
             /* ----------------------- ADICIONADOS RECENTES --------------------- */
@@ -8175,6 +8777,21 @@
                 return el;
             }
             function atualizarCardsDoJogo(jogo) {
+                // Atualiza banner-cards desta seção quando os detalhes chegam.
+                $$(`.banner-card[data-appid="${jogo.appId}"]`).forEach(el => {
+                    if (el._montarVideoHover) el._montarVideoHover();
+                    // Fomo chip
+                    const tags = el.querySelector('.banner-card__tags');
+                    if (tags && jogo.temFomo && !tags.querySelector('.fomo-chip'))
+                        tags.insertAdjacentHTML('afterbegin', `<span class="fomo-chip">${jogo.fomoLabel}</span>`);
+                    // Players
+                    if (jogo.players != null && !el.querySelector('.banner-card__players')) {
+                        const pl = document.createElement('span');
+                        pl.className = 'banner-card__players';
+                        pl.textContent = fmtNum.format(jogo.players);
+                        el.appendChild(pl);
+                    }
+                });
                 $$(`.card[data-appid="${jogo.appId}"], .poster[data-appid="${jogo.appId}"]`).forEach(el => {
                     // Fomo chip: posters usam poster__tags, cards usam bm-chips__row
                     if (jogo.temFomo) {
@@ -10664,10 +11281,12 @@
             }
             function ensureInit(name) {
                 if (initDone.has(name)) return;
+                initDone.add(name);
                 var fn = window['init' + cap(name)];
                 if (typeof fn === 'function') {
-                    initDone.add(name);
-                    try { fn(); } catch (e) { console.error('init ' + name + ' falhou:', e); }
+                    (window.bibStoreReady || Promise.resolve()).then(function () {
+                        try { fn(); } catch (e) { console.error('init ' + name + ' falhou:', e); }
+                    });
                 }
             }
 
