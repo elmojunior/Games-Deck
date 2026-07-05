@@ -147,6 +147,7 @@
 
             /* Reviews — forma de TEXTO no claro (mesma família, tons legíveis sobre branco) */
             --review-hi: #2e7d32;
+            --review-yellow: var(--score-yellow);
             --review-mid: #e65100;
             --review-lo: #c62828;
 
@@ -214,11 +215,13 @@
             /* Ratings — identidade única verde/âmbar/vermelho.
        Selos de nota (fundo fixo + texto branco, nos dois temas): */
             --score-hi: #43a047;
+            --score-yellow: #f0b429;
             --score-mid: #f57c00;
             --score-lo: #d64541;
 
             /* Reviews — mesma família, forma de TEXTO (tom escuro; claro sobrescreve p/ legibilidade) */
             --review-hi: #6cd97e;
+            --review-yellow: #ffd460;
             --review-mid: #ffa726;
             --review-lo: #ff8a80;
 
@@ -1772,8 +1775,8 @@
         }
 
         .list-item__thumb {
-            width: 120px;
-            height: 56px;
+            width: 144px;
+            height: 66px;
             border-radius: var(--shape-s);
             object-fit: cover;
             flex-shrink: 0;
@@ -1820,13 +1823,92 @@
             opacity: .5;
         }
 
+        /* Wrapper de overflow + tooltip por linha no Explorar Acervo */
+        .li-row {
+            position: relative;
+            min-width: 0;
+        }
+        .li-row .list-item__top {
+            overflow: hidden;
+            flex-wrap: nowrap;
+        }
+        .li-row .list-item__meta {
+            overflow: hidden;
+            flex-wrap: nowrap;
+        }
+        .li-row .list-item__genres {
+            overflow: hidden;
+            flex-wrap: nowrap;
+        }
+        .li-row .list-item__meta > *,
+        .li-row .list-item__genres > * {
+            flex-shrink: 0;
+        }
+        .li-row.is-overflow .list-item__meta,
+        .li-row.is-overflow .list-item__genres {
+            -webkit-mask: linear-gradient(to right, #000 72%, transparent 100%);
+            mask: linear-gradient(to right, #000 72%, transparent 100%);
+        }
+        .li-tip {
+            position: absolute;
+            display: none;
+            bottom: calc(100% + 6px);
+            left: 0;
+            z-index: 200;
+            background: var(--md-sys-color-surface-highest);
+            border-radius: var(--shape-s);
+            padding: 8px 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.4);
+            color: var(--md-sys-color-on-surface);
+            font: var(--md-sys-typescale-body-small);
+            white-space: nowrap;
+            pointer-events: none;
+            max-width: 380px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .li-tip--chips {
+            white-space: normal;
+            flex-wrap: wrap;
+            gap: 6px;
+            text-overflow: unset;
+            overflow: visible;
+            max-width: 320px;
+        }
+        .li-tip .dot {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: .5;
+            vertical-align: middle;
+        }
+        .li-row.is-overflow:hover > .li-tip,
+        .li-row.is-overflow:focus-within > .li-tip {
+            display: block;
+        }
+        .li-row.is-overflow:hover > .li-tip--chips,
+        .li-row.is-overflow:focus-within > .li-tip--chips {
+            display: flex;
+        }
+
         .list-item__genres {
             display: flex;
             gap: 6px;
             flex-wrap: wrap;
         }
 
-        .list-item__genres span {
+        .list-item__genres .fomo-chip,
+        .li-tip--chips .fomo-chip {
+            padding: 2px 10px;
+            font-size: .72rem;
+            background: #d3f759;
+            color: #182e00;
+        }
+
+        .list-item__genres span,
+        .li-tip--chips span {
             font-size: .72rem;
             padding: 2px 10px;
             border-radius: var(--shape-full);
@@ -1874,6 +1956,15 @@
             background: var(--score-lo);
         }
 
+        .metacritic--yellow {
+            background: var(--score-yellow);
+            color: #1a1200;
+        }
+
+        .metacritic--orange {
+            background: #ff8c00;
+        }
+
         /* Nota de avaliações da Steam (% de positivas) — usada na lista da home */
         .steam-score {
             font-size: .8rem;
@@ -1898,6 +1989,11 @@
 
         .steam-score--lo {
             background: var(--score-lo);
+        }
+
+        .steam-score--yellow {
+            background: var(--score-yellow);
+            color: #1a1200;
         }
 
         .list-item__players {
@@ -2715,6 +2811,10 @@
             background: color-mix(in srgb, #ff3333 12%, transparent);
         }
 
+        .gp-metacritic-block--orange {
+            background: color-mix(in srgb, #ff8c00 12%, transparent);
+        }
+
         .gp-metacritic-block:hover {
             transform: translateY(-1px);
         }
@@ -2753,6 +2853,10 @@
             background: #ff3333;
         }
 
+        .gp-metacritic-block--orange .gp-metacritic-block__score {
+            background: #ff8c00;
+        }
+
         .gp-metacritic-block__desc {
             font-size: 0.74rem;
             color: var(--md-sys-color-on-surface-var);
@@ -2778,6 +2882,10 @@
 
         .gp-reviews--lo {
             background: color-mix(in srgb, var(--review-lo) 12%, transparent);
+        }
+
+        .gp-reviews--yellow {
+            background: color-mix(in srgb, var(--review-yellow) 12%, transparent);
         }
 
         .gp-reviews__head {
@@ -2811,6 +2919,11 @@
             color: var(--review-lo);
         }
 
+        .gp-reviews--yellow .gp-reviews__pct,
+        .gp-reviews--yellow .gp-reviews__desc {
+            color: var(--review-yellow);
+        }
+
         .gp-reviews__bar {
             height: 8px;
             border-radius: var(--shape-full);
@@ -2835,6 +2948,10 @@
 
         .gp-reviews--lo .gp-reviews__bar span {
             background: var(--review-lo);
+        }
+
+        .gp-reviews--yellow .gp-reviews__bar span {
+            background: var(--review-yellow);
         }
 
         .gp-reviews__meta {
@@ -3608,6 +3725,11 @@
 
         .capa-nota.is-lo {
             background: var(--score-lo);
+        }
+
+        .capa-nota.is-yellow {
+            background: var(--score-yellow);
+            color: #1a1200;
         }
 
         /* --- Lista de cards horizontais --- */
@@ -5719,6 +5841,11 @@
         .capa-nota.is-lo {
             background: var(--score-lo) !important;
         }
+
+        .capa-nota.is-yellow {
+            background: var(--score-yellow) !important;
+            color: #1a1200 !important;
+        }
     </style>
 </head>
 
@@ -6412,39 +6539,39 @@
             { nome: "Counter-Strike 2", steam_url: "https://store.steampowered.com/app/730/" },
             { nome: "Dota 2", steam_url: "https://store.steampowered.com/app/570/" },
             { nome: "PUBG: BATTLEGROUNDS", steam_url: "https://store.steampowered.com/app/578080/" },
-            { nome: "Apex Legends", steam_url: "https://store.steampowered.com/app/1172470/" },
-            { nome: "Bongo Cat", steam_url: "https://store.steampowered.com/app/3419430/" },
-            { nome: "Rust", steam_url: "https://store.steampowered.com/app/252490/" },
-            { nome: "The Binding of Isaac: Rebirth", steam_url: "https://store.steampowered.com/app/250900/" },
-            { nome: "Delta Force", steam_url: "https://store.steampowered.com/app/2507950/" },
-            { nome: "Wallpaper Engine", steam_url: "https://store.steampowered.com/app/431960/" },
-            { nome: "Slay the Spire 2", steam_url: "https://store.steampowered.com/app/2868840/" },
-            { nome: "Stardew Valley", steam_url: "https://store.steampowered.com/app/413150/" },
-            { nome: "Grand Theft Auto V", steam_url: "https://store.steampowered.com/app/271590/" },
-            { nome: "Path of Exile 2", steam_url: "https://store.steampowered.com/app/2694490/" },
-            { nome: "NARAKA: BLADEPOINT", steam_url: "https://store.steampowered.com/app/1203220/" },
-            { nome: "Dead by Daylight", steam_url: "https://store.steampowered.com/app/381210/" },
-            { nome: "Don't Starve Together", steam_url: "https://store.steampowered.com/app/322330/" },
-            { nome: "Cyberpunk 2077", steam_url: "https://store.steampowered.com/app/1091500/" },
-            { nome: "War Thunder", steam_url: "https://store.steampowered.com/app/236390/" },
-            { nome: "Destiny 2", steam_url: "https://store.steampowered.com/app/1085660/" },
-            { nome: "Warframe", steam_url: "https://store.steampowered.com/app/230410/" },
-            { nome: "Limbus Company", steam_url: "https://store.steampowered.com/app/1973530/" },
-            { nome: "Geometry Dash", steam_url: "https://store.steampowered.com/app/322170/" },
-            { nome: "7 Days to Die", steam_url: "https://store.steampowered.com/app/251570/" },
-            { nome: "Marvel Rivals", steam_url: "https://store.steampowered.com/app/2767030/" },
-            { nome: "Baldur's Gate 3", steam_url: "https://store.steampowered.com/app/1086940/" },
-            { nome: "Palworld", steam_url: "https://store.steampowered.com/app/1623730/" },
-            { nome: "VRChat", steam_url: "https://store.steampowered.com/app/438100/" },
-            { nome: "Tom Clancy's Rainbow Six Siege", steam_url: "https://store.steampowered.com/app/359550/" },
-            { nome: "Team Fortress 2", steam_url: "https://store.steampowered.com/app/440/" },
-            { nome: "DayZ", steam_url: "https://store.steampowered.com/app/221100/" },
-            { nome: "Sid Meier's Civilization VI", steam_url: "https://store.steampowered.com/app/289070/" },
-            { nome: "Euro Truck Simulator 2", steam_url: "https://store.steampowered.com/app/227300/" },
-            { nome: "Red Dead Redemption 2", steam_url: "https://store.steampowered.com/app/1174180/" },
-            { nome: "Terraria", steam_url: "https://store.steampowered.com/app/105600/" },
-            { nome: "ARK: Survival Ascended", steam_url: "https://store.steampowered.com/app/2399830/" },
-            { nome: "Mount & Blade II: Bannerlord", steam_url: "https://store.steampowered.com/app/261550/" },
+            // { nome: "Apex Legends", steam_url: "https://store.steampowered.com/app/1172470/" },
+            // { nome: "Bongo Cat", steam_url: "https://store.steampowered.com/app/3419430/" },
+            // { nome: "Rust", steam_url: "https://store.steampowered.com/app/252490/" },
+            // { nome: "The Binding of Isaac: Rebirth", steam_url: "https://store.steampowered.com/app/250900/" },
+            // { nome: "Delta Force", steam_url: "https://store.steampowered.com/app/2507950/" },
+            // { nome: "Wallpaper Engine", steam_url: "https://store.steampowered.com/app/431960/" },
+            // { nome: "Slay the Spire 2", steam_url: "https://store.steampowered.com/app/2868840/" },
+            // { nome: "Stardew Valley", steam_url: "https://store.steampowered.com/app/413150/" },
+            // { nome: "Grand Theft Auto V", steam_url: "https://store.steampowered.com/app/271590/" },
+            // { nome: "Path of Exile 2", steam_url: "https://store.steampowered.com/app/2694490/" },
+            // { nome: "NARAKA: BLADEPOINT", steam_url: "https://store.steampowered.com/app/1203220/" },
+            // { nome: "Dead by Daylight", steam_url: "https://store.steampowered.com/app/381210/" },
+            // { nome: "Don't Starve Together", steam_url: "https://store.steampowered.com/app/322330/" },
+            // { nome: "Cyberpunk 2077", steam_url: "https://store.steampowered.com/app/1091500/" },
+            // { nome: "War Thunder", steam_url: "https://store.steampowered.com/app/236390/" },
+            // { nome: "Destiny 2", steam_url: "https://store.steampowered.com/app/1085660/" },
+            // { nome: "Warframe", steam_url: "https://store.steampowered.com/app/230410/" },
+            // { nome: "Limbus Company", steam_url: "https://store.steampowered.com/app/1973530/" },
+            // { nome: "Geometry Dash", steam_url: "https://store.steampowered.com/app/322170/" },
+            // { nome: "7 Days to Die", steam_url: "https://store.steampowered.com/app/251570/" },
+            // { nome: "Marvel Rivals", steam_url: "https://store.steampowered.com/app/2767030/" },
+            // { nome: "Baldur's Gate 3", steam_url: "https://store.steampowered.com/app/1086940/" },
+            // { nome: "Palworld", steam_url: "https://store.steampowered.com/app/1623730/" },
+            // { nome: "VRChat", steam_url: "https://store.steampowered.com/app/438100/" },
+            // { nome: "Tom Clancy's Rainbow Six Siege", steam_url: "https://store.steampowered.com/app/359550/" },
+            // { nome: "Team Fortress 2", steam_url: "https://store.steampowered.com/app/440/" },
+            // { nome: "DayZ", steam_url: "https://store.steampowered.com/app/221100/" },
+            // { nome: "Sid Meier's Civilization VI", steam_url: "https://store.steampowered.com/app/289070/" },
+            // { nome: "Euro Truck Simulator 2", steam_url: "https://store.steampowered.com/app/227300/" },
+            // { nome: "Red Dead Redemption 2", steam_url: "https://store.steampowered.com/app/1174180/" },
+            // { nome: "Terraria", steam_url: "https://store.steampowered.com/app/105600/" },
+            // { nome: "ARK: Survival Ascended", steam_url: "https://store.steampowered.com/app/2399830/" },
+            // { nome: "Mount & Blade II: Bannerlord", steam_url: "https://store.steampowered.com/app/261550/" },
             { nome: "DAVE THE DIVER", steam_url: "https://store.steampowered.com/app/1868140/" },
             { nome: "ELDEN RING", steam_url: "https://store.steampowered.com/app/1245620/" },
             { nome: "Diablo® IV", steam_url: "https://store.steampowered.com/app/2344520/" },
@@ -7468,6 +7595,7 @@
                 setLoadBar(100, true);
                 setStatus(`Pronto — ${JOGOS.length} jogos · ${comNov} com novidades.`);
                 setTimeout(window.marcarOverflowBiblioteca, 150);
+                setTimeout(window.marcarOverflowListItems, 150);
             }
             function avaliarFomo(jogo) {
                 if (!jogo.news?.length) return;
@@ -7848,6 +7976,7 @@
                     lista.slice(ACERVO_LIMITE).forEach(j => extra.appendChild(criarListItem(j)));
                 }
                 atualizarToggleAcervo(lista.length);
+                setTimeout(window.marcarOverflowListItems, 100);
             }
             function atualizarToggleAcervo(total) {
                 const extra = $('#listaAcervoExtra'), toggle = $('#acervoToggle');
@@ -7959,26 +8088,28 @@
             function criarListItem(jogo) {
                 const el = document.createElement('div'); el.className = 'list-item'; el.dataset.appid = jogo.appId; el.setAttribute('role', 'listitem');
                 const d = jogo.details;
-                const generos = (d?.generos || []).slice(0, 3);
+                const generos = d?.generos || [];
                 const meta = [];
                 if (d?.lancamento) meta.push(String(anoDe(d.lancamento)));
                 if (d?.desenvolvedora) meta.push(escapeHtml(d.desenvolvedora));
-                if (jogo.temFomo) meta.push(jogo.fomoLabel);
                 if (d?.controle === 'full') meta.push('🎮 Controle total');
                 const metaHtml = meta.map((m, i) => `${i ? '<span class="dot"></span>' : ''}<span>${m}</span>`).join('');
-                const generosHtml = generos.length ? `<div class="list-item__genres">${generos.map(g => `<span>${escapeHtml(g)}</span>`).join('')}</div>` : '';
+                const fomoChip = jogo.temFomo ? `<span class="fomo-chip">${jogo.fomoLabel}</span>` : '';
+                const genreSpans = generos.map(g => `<span>${escapeHtml(g)}</span>`).join('');
+                const chipsContent = fomoChip + genreSpans;
+                const generosHtml = chipsContent ? `<div class="li-row" tabindex="0"><div class="list-item__genres">${chipsContent}</div><div class="li-tip li-tip--chips">${genreSpans}</div></div>` : '';
                 let score = '';
                 if (jogo.reviews && jogo.reviews.total) {
                     const pct = Math.round((jogo.reviews.pos / jogo.reviews.total) * 100);
-                    const cls = pct >= 80 ? 'hi' : pct >= 55 ? 'mid' : 'lo';
+                    const cls = pct >= 80 ? 'hi' : pct >= 60 ? 'yellow' : pct >= 50 ? 'mid' : 'lo';
                     score = `<span class="steam-score steam-score--${cls}" title="${escapeAttr(jogo.reviews.desc || 'Avaliações Steam')} · ${fmtNum.format(jogo.reviews.total)} avaliações">${pct}%</span>`;
                 }
                 const players = jogo.players != null ? `<span class="list-item__players"><span class="online-dot"></span>${fmtNum.format(jogo.players)}</span>` : '';
                 el.innerHTML = `
         <img class="list-item__thumb" src="${imgHeader(jogo)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
         <div class="list-item__info">
-            <div class="list-item__top"><span class="list-item__name">${escapeHtml(jogo.nome)}</span></div>
-            <div class="list-item__meta">${metaHtml}</div>
+            <div class="li-row" tabindex="0"><div class="list-item__top"><span class="list-item__name">${escapeHtml(jogo.nome)}</span></div><div class="li-tip">${escapeHtml(jogo.nome)}</div></div>
+            <div class="li-row" tabindex="0"><div class="list-item__meta">${metaHtml}</div><div class="li-tip">${metaHtml}</div></div>
             ${generosHtml}
         </div>
         <div class="list-item__right">${players}${score}<button class="btn btn--tonal btn--icon" data-play aria-label="Jogar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="16" height="16" style="fill:currentColor"><path d="M187.2 100.9C174.8 94.1 159.8 94.4 147.6 101.6C135.4 108.8 128 121.9 128 136L128 504C128 518.1 135.5 531.2 147.6 538.4C159.7 545.6 174.8 545.9 187.2 539.1L523.2 355.1C536 348.1 544 334.6 544 320C544 305.4 536 291.9 523.2 284.9L187.2 100.9z"/></svg></button></div>`;
@@ -8562,6 +8693,24 @@
                 });
             };
 
+            window.marcarOverflowListItems = function () {
+                document.querySelectorAll('#listaAcervo .li-row, #listaAcervoExtra .li-row').forEach(row => {
+                    let overflowing = false;
+                    const top = row.querySelector('.list-item__top');
+                    const meta = row.querySelector('.list-item__meta');
+                    const genres = row.querySelector('.list-item__genres');
+                    if (top) {
+                        const name = top.querySelector('.list-item__name');
+                        overflowing = name ? name.scrollWidth > name.offsetWidth + 1 : false;
+                    } else if (meta) {
+                        overflowing = meta.scrollWidth > meta.offsetWidth + 1;
+                    } else if (genres) {
+                        overflowing = genres.scrollWidth > genres.offsetWidth + 1;
+                    }
+                    row.classList.toggle('is-overflow', overflowing);
+                });
+            };
+
             function criarPoster(jogo) {
                 const el = document.createElement('a');
                 el.className = 'poster'; el.href = `#jogo?appid=${jogo.appId}`; el.dataset.appid = jogo.appId;
@@ -8577,7 +8726,7 @@
                 const el = document.createElement('a');
                 el.className = 'card'; el.href = `#jogo?appid=${jogo.appId}`; el.dataset.appid = jogo.appId;
                 const nota = notaDe(jogo);
-                const notaHtml = nota != null ? `<span class="capa-nota ${nota >= 75 ? 'is-hi' : nota >= 50 ? 'is-mid' : 'is-lo'}">${nota}</span>` : '';
+                const notaHtml = nota != null ? `<span class="capa-nota ${nota >= 80 ? 'is-hi' : nota >= 60 ? 'is-yellow' : nota >= 50 ? 'is-mid' : 'is-lo'}">${nota}</span>` : '';
                 const players = jogo.players != null ? `<span class="card__players" style="left: auto !important; right: 10px; width: max-content !important;">${fmtNum.format(jogo.players)}</span>` : '';
                 el.innerHTML = `
         <div class="card__banner">
@@ -8732,7 +8881,7 @@
                 const generosHtml = generos.length ? `<div class="list-item__genres">${generos.map(g => `<span>${escapeHtml(g)}</span>`).join('')}</div>` : '';
                 const nota = notaDe(jogo);
                 let mc = '';
-                if (nota != null) { const cls = nota >= 75 ? 'hi' : nota >= 50 ? 'mid' : 'lo'; mc = `<span class="metacritic metacritic--${cls}" title="Nota">${nota}</span>`; }
+                if (nota != null) { const cls = nota >= 80 ? 'hi' : nota >= 60 ? 'yellow' : nota >= 50 ? 'mid' : 'lo'; mc = `<span class="metacritic metacritic--${cls}" title="Nota">${nota}</span>`; }
                 const players = jogo.players != null ? `<span class="list-item__players"><span class="online-dot"></span>${fmtNum.format(jogo.players)}</span>` : '';
                 el.innerHTML = `
         <img class="list-item__thumb" src="${imgHeader(jogo)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -9206,7 +9355,7 @@
 
                 let mc = '';
                 if (full?.metacritic != null) {
-                    const cls = full.metacritic >= 75 ? 'hi' : full.metacritic >= 50 ? 'mid' : 'lo';
+                    const cls = full.metacritic >= 80 ? 'hi' : full.metacritic >= 60 ? 'mid' : full.metacritic >= 50 ? 'orange' : 'lo';
                     mc = `<a class="gp-metacritic-block gp-metacritic-block--${cls}" ${full.metacriticUrl ? `href="${escapeHtml(full.metacriticUrl)}" target="_blank" rel="noopener"` : ''}>
                 <div class="gp-metacritic-block__info">
                     <span class="gp-metacritic-block__title">Metacritic</span>
@@ -9257,7 +9406,7 @@
             function renderReviewBlock(reviews) {
                 if (!reviews || !reviews.total) return '';
                 const pct = Math.round((reviews.pos / reviews.total) * 100);
-                const cls = pct >= 80 ? 'hi' : pct >= 55 ? 'mid' : 'lo';
+                const cls = pct >= 80 ? 'hi' : pct >= 60 ? 'yellow' : pct >= 50 ? 'mid' : 'lo';
                 return `
         <div class="gp-reviews gp-reviews--${cls}">
             <div class="gp-reviews__head">
