@@ -11475,13 +11475,16 @@
         (function () {
             'use strict';
 
-            const START_URL  = '/Games-Deck/gamesdeck.html';
-            const SCOPE      = '/Games-Deck/';
-            const SW_URL     = '/Games-Deck/sw.js';
-            const BG_COLOR   = '#141223';
-            const THEME_DARK = '#5E1DCF';
+            /* URLs absolutas obrigatórias no manifest quando servido via Blob URL.
+               Blob URLs não têm origin HTTPS, então caminhos relativos seriam
+               resolvidos contra blob:// e rejeitados pelo Chrome como inválidos. */
+            var ORIGIN    = 'https://elmojunior.github.io';
+            var BASE      = ORIGIN + '/Games-Deck';
+            var SW_URL    = '/Games-Deck/sw.js';
+            var BG_COLOR  = '#141223';
+            var THEME_CLR = '#5E1DCF';
 
-            /* Renderiza o SVG do favicon num canvas e devolve data URI PNG */
+            /* Renderiza o SVG do favicon num canvas quadrado e devolve data URI PNG */
             function renderIcon(svgSrc, size) {
                 return new Promise(function (resolve) {
                     var img = new Image();
@@ -11489,7 +11492,6 @@
                         var c = document.createElement('canvas');
                         c.width = c.height = size;
                         var ctx = c.getContext('2d');
-                        /* Fundo arredondado com a cor de background do app */
                         var r = size * 0.22;
                         ctx.beginPath();
                         ctx.moveTo(r, 0); ctx.lineTo(size - r, 0);
@@ -11503,10 +11505,9 @@
                         ctx.closePath();
                         ctx.fillStyle = BG_COLOR;
                         ctx.fill();
-                        /* Logo centralizado com padding de 15% */
-                        var pad  = size * 0.15;
+                        var pad   = size * 0.15;
                         var logoW = size - pad * 2;
-                        var logoH = logoW * (259 / 319); /* proporção do viewBox SVG */
+                        var logoH = logoW * (259 / 319);
                         var logoY = (size - logoH) / 2;
                         ctx.drawImage(img, pad, logoY, logoW, logoH);
                         resolve(c.toDataURL('image/png'));
@@ -11516,6 +11517,18 @@
                 });
             }
 
+            /* Converte data URI em Blob URL — Chrome aceita blob: como src de ícone,
+               mas rejeita data: URIs no manifest (não são "fetchable" pelo browser). */
+            function toBlobUrl(dataUrl) {
+                if (!dataUrl) return null;
+                var parts = dataUrl.split(',');
+                var mime  = parts[0].match(/:(.*?);/)[1];
+                var bytes = atob(parts[1]);
+                var arr   = new Uint8Array(bytes.length);
+                for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+                return URL.createObjectURL(new Blob([arr], { type: mime }));
+            }
+
             async function setupPWA() {
                 var svgSrc = (document.querySelector('link[rel="icon"]') || {}).href;
                 if (!svgSrc) return;
@@ -11523,45 +11536,45 @@
                 var png192 = await renderIcon(svgSrc, 192);
                 var png512 = await renderIcon(svgSrc, 512);
 
+                var url192 = toBlobUrl(png192);
+                var url512 = toBlobUrl(png512);
+
                 /* apple-touch-icon (iOS / iPadOS) */
-                if (png192) {
+                if (url192) {
                     var appleLink = document.createElement('link');
                     appleLink.rel  = 'apple-touch-icon';
-                    appleLink.href = png192;
+                    appleLink.href = url192;
                     document.head.appendChild(appleLink);
                 }
 
-                /* Manifest gerado em memória — sem arquivo extra */
                 var icons = [];
-                if (png192) icons.push({ src: png192, sizes: '192x192', type: 'image/png' });
-                if (png512) icons.push({ src: png512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' });
-                if (svgSrc) icons.push({ src: svgSrc, sizes: 'any', type: 'image/svg+xml' });
+                if (url192) icons.push({ src: url192, sizes: '192x192', type: 'image/png' });
+                if (url512) icons.push({ src: url512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' });
 
                 var manifest = {
                     name:             'Games Deck',
                     short_name:       'GamesDeck',
                     description:      'Sua biblioteca pessoal de jogos Steam',
-                    start_url:        START_URL,
-                    scope:            SCOPE,
+                    id:               '/Games-Deck/gamesdeck.html',
+                    start_url:        BASE + '/gamesdeck.html',
+                    scope:            BASE + '/',
                     display:          'standalone',
                     orientation:      'any',
                     background_color: BG_COLOR,
-                    theme_color:      THEME_DARK,
+                    theme_color:      THEME_CLR,
                     lang:             'pt-BR',
                     categories:       ['games', 'entertainment'],
                     icons:            icons
                 };
 
-                var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-                var manifestUrl = URL.createObjectURL(blob);
+                var mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
                 var link = document.createElement('link');
                 link.rel  = 'manifest';
-                link.href = manifestUrl;
+                link.href = URL.createObjectURL(mBlob);
                 document.head.appendChild(link);
 
-                /* Service Worker */
                 if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register(SW_URL, { scope: SCOPE })
+                    navigator.serviceWorker.register(SW_URL, { scope: '/Games-Deck/' })
                         .then(function (r) { console.log('[PWA] SW registrado, escopo:', r.scope); })
                         .catch(function (e) { console.warn('[PWA] Falha ao registrar SW:', e); });
                 }
