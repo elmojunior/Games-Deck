@@ -88,9 +88,9 @@
                 });
             }
             return {
-                get:   function (store, key) { return storeGet(store, key); },
-                set:   function (store, key, val) { return storeSet(store, key, val); },
-                del:   function (store, key) { return storeDel(store, key); },
+                get: function (store, key) { return storeGet(store, key); },
+                set: function (store, key, val) { return storeSet(store, key, val); },
+                del: function (store, key) { return storeDel(store, key); },
                 clear: function (store) { return storeClear(store); },
                 /* Atalhos para compatibilidade com código anterior que usava bgIdb */
                 bgGet: function (key) { return storeGet('bg', key); },
@@ -99,7 +99,7 @@
             };
         })();
         /* Alias para compatibilidade com referências a window.bgIdb ainda presentes */
-        window.bgIdb = { get: function(k){return window.gdb.bgGet(k);}, set: function(k,v){return window.gdb.bgSet(k,v);}, del: function(k){return window.gdb.bgDel(k);} };
+        window.bgIdb = { get: function (k) { return window.gdb.bgGet(k); }, set: function (k, v) { return window.gdb.bgSet(k, v); }, del: function (k) { return window.gdb.bgDel(k); } };
 
         /* ---- Aplica imagem de fundo do tema atual (lê tudo do IDB) ---- */
         window.aplicarBgTema = function () {
@@ -109,10 +109,10 @@
                 window.gdb.get('settings', tema + '-blur'),
                 window.gdb.get('settings', tema + '-opacity')
             ]).then(function (res) {
-                var img     = res[0] || '';
-                var blur    = parseFloat(res[1] != null ? res[1] : 0);
+                var img = res[0] || '';
+                var blur = parseFloat(res[1] != null ? res[1] : 0);
                 var opacity = parseFloat(res[2] != null ? res[2] : 1);
-                var layer   = document.getElementById('bgLayer');
+                var layer = document.getElementById('bgLayer');
                 var overlay = document.getElementById('bgOverlay');
                 if (!layer || !overlay) return;
                 if (img) {
@@ -133,8 +133,7 @@
         new MutationObserver(window.aplicarBgTema)
             .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     </script>
-    <link rel="icon" type="image/svg+xml"
-        href="data:image/svg+xml,%3Csvg%20width%3D%22319%22%20height%3D%22259%22%20viewBox%3D%220%200%20319%20259%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M303.704%20102.496C281.53%2023.0171%20252.195%202.66604%20225.123%2010.22C218.594%2012.038%20212.798%2015.339%20208.064%2020.379C194.904%2024.338%20177.333%2028.435%20160.914%2028.435C143.418%2028.435%20124.604%2023.78%20111.235%2019.604C106.285%2013.756%20100.047%2010.021%2092.927%208.03104C65.852%200.476044%2036.516%2020.832%2014.343%20100.31C-7.83097%20179.785%20-3.85297%20250.336%2023.218%20257.894C45.65%20264.15%2080.168%20231.75%20102.835%20173.02C114.928%20169.316%20138.251%20158.678%20158.729%20158.678C177.183%20158.678%20200.495%20160.403%20215.095%20164.291C241.774%20225.45%20273.092%20263.025%20295.951%20256.645C323.034%20249.087%20325.878%20181.979%20303.704%20102.496Z%22%20fill%3D%22url(%23a)%22%2F%3E%3Cpath%20d%3D%22M303.704%2095.929C281.53%2016.45%20252.195%20-3.90497%20225.123%203.65303C218.594%205.47503%20212.798%208.76803%20208.064%2013.812C194.904%2017.775%20177.333%2021.868%20160.914%2021.868C143.418%2021.868%20124.604%2017.213%20111.235%2013.034C106.285%207.18903%20100.047%203.45103%2092.927%201.46403C65.852%20-6.09097%2036.516%2014.265%2014.343%2093.743C-7.82999%20173.221%20-3.85299%20243.773%2023.218%20251.327C45.65%20257.583%2076.886%20218.617%2099.554%20159.886C111.647%20156.182%20138.251%20148.829%20158.726%20148.829C177.18%20148.829%20202.583%20154.801%20217.184%20158.689C239.941%20219.313%20271.967%20259.889%20294.822%20253.516C321.904%20245.959%20325.878%20175.408%20303.704%2095.929Z%22%20fill%3D%22url(%23b)%22%2F%3E%3Cpath%20d%3D%22M148.271%20101.329H130.49V82.897C127.538%2081.864%20124.38%2081.269%20121.076%2081.269C117.933%2081.269%20114.917%2081.8%20112.088%2082.743V101.328H93.884C93.065%20103.985%2092.619%20106.806%2092.619%20109.728C92.619%20113.174%2093.263%20116.463%2094.389%20119.52H112.088V136.713C114.917%20137.656%20117.936%20138.187%20121.076%20138.187C124.38%20138.187%20127.538%20137.596%20130.49%20136.559V119.519H147.773C148.892%20116.462%20149.535%20113.173%20149.535%20109.727C149.536%20106.807%20149.094%20103.985%20148.271%20101.329Z%22%20fill%3D%22url(%23c)%22%2F%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22a%22%20x1%3D%22159.256%22%20y1%3D%226.567%22%20x2%3D%22159.256%22%20y2%3D%22258.66%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20stop-color%3D%22%23300F69%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%235E1DCF%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22b%22%20x1%3D%22170.119%22%20y1%3D%2262.769%22%20x2%3D%22171.119%22%20y2%3D%22154.269%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20stop-color%3D%22%236257A6%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23653F8D%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22c%22%20x1%3D%22121.077%22%20y1%3D%2281.269%22%20x2%3D%22120.619%22%20y2%3D%22138.269%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20stop-color%3D%22%239A96E7%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2349457F%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3C%2Fsvg%3E">
+    <link rel="icon" type="image/svg+xml" id="appFavicon" href="">
     <style>
         /* =========================================================================
    style.css — Material Design 3 com tema CLARO e ESCURO, sem frameworks/CDNs
@@ -415,8 +414,13 @@
         }
 
         /* Quando há imagem de fundo, body e gp-body ficam transparentes */
-        [data-bg="1"] body { background: transparent; }
-        [data-bg="1"] .gp-body { background: transparent; }
+        [data-bg="1"] body {
+            background: transparent;
+        }
+
+        [data-bg="1"] .gp-body {
+            background: transparent;
+        }
 
         body {
             font-family: var(--font);
@@ -963,10 +967,25 @@
         }
 
         /* Fades laterais via mask — sem variáveis CSS para evitar bug de repaint */
-        .hero                  { -webkit-mask-image: linear-gradient(to right, transparent 0, black clamp(32px,6%,72px), black calc(100% - clamp(32px,6%,72px)), transparent 100%); mask-image: linear-gradient(to right, transparent 0, black clamp(32px,6%,72px), black calc(100% - clamp(32px,6%,72px)), transparent 100%); }
-        .hero.at-start         { -webkit-mask-image: linear-gradient(to right, black 0%,                                  black calc(100% - clamp(32px,6%,72px)), transparent 100%); mask-image: linear-gradient(to right, black 0%,                                  black calc(100% - clamp(32px,6%,72px)), transparent 100%); }
-        .hero.at-end           { -webkit-mask-image: linear-gradient(to right, transparent 0, black clamp(32px,6%,72px), black 100%);                                               mask-image: linear-gradient(to right, transparent 0, black clamp(32px,6%,72px), black 100%); }
-        .hero.at-start.at-end  { -webkit-mask-image: none; mask-image: none; }
+        .hero {
+            -webkit-mask-image: linear-gradient(to right, transparent 0, black clamp(32px, 6%, 72px), black calc(100% - clamp(32px, 6%, 72px)), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, black clamp(32px, 6%, 72px), black calc(100% - clamp(32px, 6%, 72px)), transparent 100%);
+        }
+
+        .hero.at-start {
+            -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - clamp(32px, 6%, 72px)), transparent 100%);
+            mask-image: linear-gradient(to right, black 0%, black calc(100% - clamp(32px, 6%, 72px)), transparent 100%);
+        }
+
+        .hero.at-end {
+            -webkit-mask-image: linear-gradient(to right, transparent 0, black clamp(32px, 6%, 72px), black 100%);
+            mask-image: linear-gradient(to right, transparent 0, black clamp(32px, 6%, 72px), black 100%);
+        }
+
+        .hero.at-start.at-end {
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
 
         /* O track agora usa transform para deslizar — dá controle total sobre
    duração e easing, sem depender do scroll nativo do browser. */
@@ -1455,19 +1474,24 @@
             --rail-mask-l: var(--rail-fade);
             --rail-mask-r: var(--rail-fade);
             -webkit-mask-image: linear-gradient(to right,
-                transparent 0,
-                black var(--rail-mask-l),
-                black calc(100% - var(--rail-mask-r)),
-                transparent 100%);
+                    transparent 0,
+                    black var(--rail-mask-l),
+                    black calc(100% - var(--rail-mask-r)),
+                    transparent 100%);
             mask-image: linear-gradient(to right,
-                transparent 0,
-                black var(--rail-mask-l),
-                black calc(100% - var(--rail-mask-r)),
-                transparent 100%);
+                    transparent 0,
+                    black var(--rail-mask-l),
+                    black calc(100% - var(--rail-mask-r)),
+                    transparent 100%);
         }
 
-        .rail-wrap.at-start { --rail-mask-l: 0px; }
-        .rail-wrap.at-end   { --rail-mask-r: 0px; }
+        .rail-wrap.at-start {
+            --rail-mask-l: 0px;
+        }
+
+        .rail-wrap.at-end {
+            --rail-mask-r: 0px;
+        }
 
         /* ---- "Em Alta na Comunidade": esmaecimento por sobreposição ----
            Esta seção fica sempre sobre cor sólida (--highlight-bg), então em vez
@@ -1478,6 +1502,7 @@
             -webkit-mask-image: none;
             mask-image: none;
         }
+
         #wrapEmAlta::before,
         #wrapEmAlta::after {
             content: "";
@@ -1489,16 +1514,24 @@
             pointer-events: none;
             transition: opacity .2s;
         }
+
         #wrapEmAlta::before {
             left: 0;
             background: linear-gradient(to right, var(--highlight-bg), transparent);
         }
+
         #wrapEmAlta::after {
             right: 0;
             background: linear-gradient(to left, var(--highlight-bg), transparent);
         }
-        #wrapEmAlta.at-start::before { opacity: 0; }
-        #wrapEmAlta.at-end::after   { opacity: 0; }
+
+        #wrapEmAlta.at-start::before {
+            opacity: 0;
+        }
+
+        #wrapEmAlta.at-end::after {
+            opacity: 0;
+        }
 
         /* Botões de navegação */
         .rail-nav {
@@ -1867,7 +1900,7 @@
             position: absolute;
             inset: auto 0 0 0;
             padding: 32px 14px 12px;
-            background: linear-gradient(0deg, rgba(0,0,0,.85), transparent);
+            background: linear-gradient(0deg, rgba(0, 0, 0, .85), transparent);
             opacity: 0;
             transform: translateY(6px);
             transition: opacity .25s, transform .25s;
@@ -2088,27 +2121,33 @@
             position: relative;
             min-width: 0;
         }
+
         .li-row .list-item__top {
             overflow: hidden;
             flex-wrap: nowrap;
         }
+
         .li-row .list-item__meta {
             overflow: hidden;
             flex-wrap: nowrap;
         }
+
         .li-row .list-item__genres {
             overflow: hidden;
             flex-wrap: nowrap;
         }
-        .li-row .list-item__meta > *,
-        .li-row .list-item__genres > * {
+
+        .li-row .list-item__meta>*,
+        .li-row .list-item__genres>* {
             flex-shrink: 0;
         }
+
         .li-row.is-overflow .list-item__meta,
         .li-row.is-overflow .list-item__genres {
             -webkit-mask: linear-gradient(to right, #000 72%, transparent 100%);
             mask: linear-gradient(to right, #000 72%, transparent 100%);
         }
+
         .li-tip {
             position: absolute;
             display: none;
@@ -2118,7 +2157,7 @@
             background: var(--md-sys-color-surface-highest);
             border-radius: var(--shape-s);
             padding: 8px 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,.4);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
             color: var(--md-sys-color-on-surface);
             font: var(--md-sys-typescale-body-small);
             white-space: nowrap;
@@ -2127,6 +2166,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .li-tip--chips {
             white-space: normal;
             flex-wrap: wrap;
@@ -2135,6 +2175,7 @@
             overflow: visible;
             max-width: 320px;
         }
+
         .li-tip .dot {
             display: inline-block;
             width: 4px;
@@ -2144,12 +2185,14 @@
             opacity: .5;
             vertical-align: middle;
         }
-        .li-row.is-overflow:hover > .li-tip,
-        .li-row.is-overflow:focus-within > .li-tip {
+
+        .li-row.is-overflow:hover>.li-tip,
+        .li-row.is-overflow:focus-within>.li-tip {
             display: block;
         }
-        .li-row.is-overflow:hover > .li-tip--chips,
-        .li-row.is-overflow:focus-within > .li-tip--chips {
+
+        .li-row.is-overflow:hover>.li-tip--chips,
+        .li-row.is-overflow:focus-within>.li-tip--chips {
             display: flex;
         }
 
@@ -3386,7 +3429,9 @@
         }
 
         /* Card de novidade na página do jogo */
-        #gpFomoCard { margin-bottom: 4px; }
+        #gpFomoCard {
+            margin-bottom: 4px;
+        }
 
         .gp-fomo-card {
             display: block;
@@ -5483,7 +5528,9 @@
         }
 
         @media (max-width: 700px) {
-            .bm-tema-grid { grid-template-columns: 1fr; }
+            .bm-tema-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .bm-tema-sub {
@@ -5503,7 +5550,9 @@
             gap: 8px;
         }
 
-        .bm-tema-sub__title svg { flex-shrink: 0; }
+        .bm-tema-sub__title svg {
+            flex-shrink: 0;
+        }
 
         .bm-bg-preview {
             width: 100%;
@@ -6196,6 +6245,7 @@
             padding: 2px 8px !important;
             font-size: 0.7rem !important;
         }
+
         #pg-home .fomo-chip {
             padding: 2px 8px !important;
             font-size: 0.7rem !important;
@@ -6458,8 +6508,8 @@
                 <div class="hero__track" id="heroTrack">
                     <div class="hero__slide skeleton"></div>
                 </div>
-                <button class="hero__nav hero__nav--prev" id="heroPrev" aria-label="Anterior">‹</button>
-                <button class="hero__nav hero__nav--next" id="heroNext" aria-label="Próximo">›</button>
+                <button class="hero__nav hero__nav--prev" id="heroPrev" aria-label="Anterior"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22" style="fill:currentColor"><path d="M201.4 297.4C188.9 309.9 188.9 330.2 201.4 342.7L361.4 502.7C373.9 515.2 394.2 515.2 406.7 502.7C419.2 490.2 419.2 469.9 406.7 457.4L269.3 320L406.6 182.6C419.1 170.1 419.1 149.8 406.6 137.3C394.1 124.8 373.8 124.8 361.3 137.3L201.3 297.3z"/></svg></button>
+                <button class="hero__nav hero__nav--next" id="heroNext" aria-label="Próximo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22" style="fill:currentColor"><path d="M439.1 297.4C451.6 309.9 451.6 330.2 439.1 342.7L279.1 502.7C266.6 515.2 246.3 515.2 233.8 502.7C221.3 490.2 221.3 469.9 233.8 457.4L371.2 320L233.9 182.6C221.4 170.1 221.4 149.8 233.9 137.3C246.4 124.8 266.7 124.8 279.2 137.3L439.2 297.3z"/></svg></button>
                 <div class="hero__dots" id="heroDots"></div>
             </section>
 
@@ -6834,13 +6884,18 @@
 
             <section class="bm-tema-sec" id="secTemaBg">
                 <h2 class="bm-tema-sec__title">Configurações de Tema</h2>
-                <p class="bm-tema-sec__desc">Define uma imagem de fundo para cada tema. A imagem fica por detrás da cor de fundo da página, que funciona como uma camada de sobreposição — ajuste a opacidade para deixar mais ou menos a imagem aparecer. O blur suaviza a imagem para não distrair do conteúdo. As imagens e configurações são salvas no navegador e incluídas no backup JSON.</p>
+                <p class="bm-tema-sec__desc">Define uma imagem de fundo para cada tema. A imagem fica por detrás da cor
+                    de fundo da página, que funciona como uma camada de sobreposição — ajuste a opacidade para deixar
+                    mais ou menos a imagem aparecer. O blur suaviza a imagem para não distrair do conteúdo. As imagens e
+                    configurações são salvas no navegador e incluídas no backup JSON.</p>
                 <div class="bm-tema-grid">
 
                     <div class="bm-tema-sub" id="temaSubLight">
                         <h3 class="bm-tema-sub__title">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true" style="fill:currentColor">
-                                <path d="M424.5 355.1C449 329.2 464 294.4 464 256C464 176.5 399.5 112 320 112C240.5 112 176 176.5 176 256C176 294.4 191 329.2 215.5 355.1C236.8 377.5 260.4 409.1 268.8 448L371.2 448C379.6 409 403.2 377.5 424.5 355.1zM459.3 388.1C435.7 413 416 443.4 416 477.7L416 496C416 540.2 380.2 576 336 576L304 576C259.8 576 224 540.2 224 496L224 477.7C224 443.4 204.3 413 180.7 388.1C148 353.7 128 307.2 128 256C128 150 214 64 320 64C426 64 512 150 512 256C512 307.2 492 353.7 459.3 388.1zM272 248C272 261.3 261.3 272 248 272C234.7 272 224 261.3 224 248C224 199.4 263.4 160 312 160C325.3 160 336 170.7 336 184C336 197.3 325.3 208 312 208C289.9 208 272 225.9 272 248z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20"
+                                aria-hidden="true" style="fill:currentColor">
+                                <path
+                                    d="M424.5 355.1C449 329.2 464 294.4 464 256C464 176.5 399.5 112 320 112C240.5 112 176 176.5 176 256C176 294.4 191 329.2 215.5 355.1C236.8 377.5 260.4 409.1 268.8 448L371.2 448C379.6 409 403.2 377.5 424.5 355.1zM459.3 388.1C435.7 413 416 443.4 416 477.7L416 496C416 540.2 380.2 576 336 576L304 576C259.8 576 224 540.2 224 496L224 477.7C224 443.4 204.3 413 180.7 388.1C148 353.7 128 307.2 128 256C128 150 214 64 320 64C426 64 512 150 512 256C512 307.2 492 353.7 459.3 388.1zM272 248C272 261.3 261.3 272 248 272C234.7 272 224 261.3 224 248C224 199.4 263.4 160 312 160C325.3 160 336 170.7 336 184C336 197.3 325.3 208 312 208C289.9 208 272 225.9 272 248z" />
                             </svg>
                             Tema Claro
                         </h3>
@@ -6854,25 +6909,32 @@
                             </div>
                         </div>
                         <div class="filter-group">
-                            <h3 class="filter-group__title">Opacidade da sobreposição <span class="filter-nota-val" id="bgOpacityLightVal">100%</span></h3>
+                            <h3 class="filter-group__title">Opacidade da sobreposição <span class="filter-nota-val"
+                                    id="bgOpacityLightVal">100%</span></h3>
                             <div class="filter-slider-wrap">
-                                <input type="range" class="filter-slider" id="bgOpacityLight" min="0" max="100" step="1" value="100" style="--val: 100;">
+                                <input type="range" class="filter-slider" id="bgOpacityLight" min="0" max="100" step="1"
+                                    value="100" style="--val: 100;">
                                 <div class="filter-slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
                             </div>
                         </div>
                         <div class="filter-group">
-                            <h3 class="filter-group__title">Blur da imagem <span class="filter-nota-val" id="bgBlurLightVal">0px</span></h3>
+                            <h3 class="filter-group__title">Blur da imagem <span class="filter-nota-val"
+                                    id="bgBlurLightVal">0px</span></h3>
                             <div class="filter-slider-wrap">
-                                <input type="range" class="filter-slider" id="bgBlurLight" min="0" max="40" step="1" value="0" style="--val: 0;">
-                                <div class="filter-slider-labels"><span>0px</span><span>20px</span><span>40px</span></div>
+                                <input type="range" class="filter-slider" id="bgBlurLight" min="0" max="40" step="1"
+                                    value="0" style="--val: 0;">
+                                <div class="filter-slider-labels"><span>0px</span><span>20px</span><span>40px</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="bm-tema-sub" id="temaSubDark">
                         <h3 class="bm-tema-sub__title">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" aria-hidden="true" style="fill:currentColor">
-                                <path d="M420.9 448C428.2 425.7 442.8 405.5 459.3 388.1C492 353.7 512 307.2 512 256C512 150 426 64 320 64C214 64 128 150 128 256C128 307.2 148 353.7 180.7 388.1C197.2 405.5 211.9 425.7 219.1 448L420.8 448zM416 496L224 496L224 512C224 556.2 259.8 592 304 592L336 592C380.2 592 416 556.2 416 512L416 496zM312 176C272.2 176 240 208.2 240 248C240 261.3 229.3 272 216 272C202.7 272 192 261.3 192 248C192 181.7 245.7 128 312 128C325.3 128 336 138.7 336 152C336 165.3 325.3 176 312 176z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20"
+                                aria-hidden="true" style="fill:currentColor">
+                                <path
+                                    d="M420.9 448C428.2 425.7 442.8 405.5 459.3 388.1C492 353.7 512 307.2 512 256C512 150 426 64 320 64C214 64 128 150 128 256C128 307.2 148 353.7 180.7 388.1C197.2 405.5 211.9 425.7 219.1 448L420.8 448zM416 496L224 496L224 512C224 556.2 259.8 592 304 592L336 592C380.2 592 416 556.2 416 512L416 496zM312 176C272.2 176 240 208.2 240 248C240 261.3 229.3 272 216 272C202.7 272 192 261.3 192 248C192 181.7 245.7 128 312 128C325.3 128 336 138.7 336 152C336 165.3 325.3 176 312 176z" />
                             </svg>
                             Tema Escuro
                         </h3>
@@ -6886,17 +6948,22 @@
                             </div>
                         </div>
                         <div class="filter-group">
-                            <h3 class="filter-group__title">Opacidade da sobreposição <span class="filter-nota-val" id="bgOpacityDarkVal">100%</span></h3>
+                            <h3 class="filter-group__title">Opacidade da sobreposição <span class="filter-nota-val"
+                                    id="bgOpacityDarkVal">100%</span></h3>
                             <div class="filter-slider-wrap">
-                                <input type="range" class="filter-slider" id="bgOpacityDark" min="0" max="100" step="1" value="100" style="--val: 100;">
+                                <input type="range" class="filter-slider" id="bgOpacityDark" min="0" max="100" step="1"
+                                    value="100" style="--val: 100;">
                                 <div class="filter-slider-labels"><span>0%</span><span>50%</span><span>100%</span></div>
                             </div>
                         </div>
                         <div class="filter-group">
-                            <h3 class="filter-group__title">Blur da imagem <span class="filter-nota-val" id="bgBlurDarkVal">0px</span></h3>
+                            <h3 class="filter-group__title">Blur da imagem <span class="filter-nota-val"
+                                    id="bgBlurDarkVal">0px</span></h3>
                             <div class="filter-slider-wrap">
-                                <input type="range" class="filter-slider" id="bgBlurDark" min="0" max="40" step="1" value="0" style="--val: 0;">
-                                <div class="filter-slider-labels"><span>0px</span><span>20px</span><span>40px</span></div>
+                                <input type="range" class="filter-slider" id="bgBlurDark" min="0" max="40" step="1"
+                                    value="0" style="--val: 0;">
+                                <div class="filter-slider-labels"><span>0px</span><span>20px</span><span>40px</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -7172,11 +7239,11 @@
                     });
                     const bgTema = {};
                     await Promise.all(['light', 'dark'].map(async t => {
-                        const img     = await window.gdb.bgGet(t + '-img') || '';
-                        const blur    = await window.gdb.get('settings', t + '-blur');
+                        const img = await window.gdb.bgGet(t + '-img') || '';
+                        const blur = await window.gdb.get('settings', t + '-blur');
                         const opacity = await window.gdb.get('settings', t + '-opacity');
                         const blurVal = parseFloat(blur != null ? blur : 0);
-                        const opVal   = parseFloat(opacity != null ? opacity : 1);
+                        const opVal = parseFloat(opacity != null ? opacity : 1);
                         if (img || blurVal !== 0 || opVal !== 1)
                             bgTema[t] = { img, blur: blurVal, opacity: opVal };
                     }));
@@ -7266,9 +7333,9 @@
                         Promise.all(['light', 'dark'].map(async t => {
                             const cfg = temaDados[t];
                             if (!cfg) return;
-                            if (cfg.img)      await window.gdb.bgSet(t + '-img', cfg.img).catch(() => {});
-                            if (cfg.blur     != null) await window.gdb.set('settings', t + '-blur',    cfg.blur).catch(() => {});
-                            if (cfg.opacity  != null) await window.gdb.set('settings', t + '-opacity', cfg.opacity).catch(() => {});
+                            if (cfg.img) await window.gdb.bgSet(t + '-img', cfg.img).catch(() => { });
+                            if (cfg.blur != null) await window.gdb.set('settings', t + '-blur', cfg.blur).catch(() => { });
+                            if (cfg.opacity != null) await window.gdb.set('settings', t + '-opacity', cfg.opacity).catch(() => { });
                         })).then(() => { if (window.aplicarBgTema) window.aplicarBgTema(); });
                     }
                     return { ok: true, total: base.length, novos: novos };
@@ -7276,7 +7343,7 @@
                 resetar() {
                     lista = [];
                     window.meusJogos = lista;
-                    window.gdb.clear('library').catch(() => {});
+                    window.gdb.clear('library').catch(() => { });
                 }
             };
         })();
@@ -7707,20 +7774,20 @@
                             window.gdb.get('settings', tema + '-blur'),
                             window.gdb.get('settings', tema + '-opacity')
                         ]).then(function (res) {
-                            var img     = res[0] || null;
-                            var blur    = parseFloat(res[1] != null ? res[1] : 0);
+                            var img = res[0] || null;
+                            var blur = parseFloat(res[1] != null ? res[1] : 0);
                             var opacity = parseFloat(res[2] != null ? res[2] : 1);
-                            var opPct   = Math.round(opacity * 100);
+                            var opPct = Math.round(opacity * 100);
 
-                            var rangeOp  = q('bgOpacity' + sfx);
-                            var valOp    = q('bgOpacity' + sfx + 'Val');
+                            var rangeOp = q('bgOpacity' + sfx);
+                            var valOp = q('bgOpacity' + sfx + 'Val');
                             if (rangeOp) { rangeOp.value = opPct; setSliderVal(rangeOp, opPct); }
-                            if (valOp)   valOp.textContent = opPct + '%';
+                            if (valOp) valOp.textContent = opPct + '%';
 
                             var rangeBlur = q('bgBlur' + sfx);
-                            var valBlur   = q('bgBlur' + sfx + 'Val');
+                            var valBlur = q('bgBlur' + sfx + 'Val');
                             if (rangeBlur) { rangeBlur.value = blur; setSliderVal(rangeBlur, (blur / 40) * 100); }
-                            if (valBlur)   valBlur.textContent = blur + 'px';
+                            if (valBlur) valBlur.textContent = blur + 'px';
 
                             var prev = q('bgPreview' + sfx);
                             if (!prev) return;
@@ -8388,9 +8455,9 @@
                 wrapEl._railOffset = 0;
 
                 const prevBtn = document.createElement('button');
-                prevBtn.className = 'rail-nav rail-nav--prev'; prevBtn.innerHTML = '‹'; prevBtn.setAttribute('aria-label', 'Anterior');
+                prevBtn.className = 'rail-nav rail-nav--prev'; prevBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22" style="fill:currentColor"><path d="M201.4 297.4C188.9 309.9 188.9 330.2 201.4 342.7L361.4 502.7C373.9 515.2 394.2 515.2 406.7 502.7C419.2 490.2 419.2 469.9 406.7 457.4L269.3 320L406.6 182.6C419.1 170.1 419.1 149.8 406.6 137.3C394.1 124.8 373.8 124.8 361.3 137.3L201.3 297.3z"/></svg>`; prevBtn.setAttribute('aria-label', 'Anterior');
                 const nextBtn = document.createElement('button');
-                nextBtn.className = 'rail-nav rail-nav--next'; nextBtn.innerHTML = '›'; nextBtn.setAttribute('aria-label', 'Próximo');
+                nextBtn.className = 'rail-nav rail-nav--next'; nextBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22" style="fill:currentColor"><path d="M439.1 297.4C451.6 309.9 451.6 330.2 439.1 342.7L279.1 502.7C266.6 515.2 246.3 515.2 233.8 502.7C221.3 490.2 221.3 469.9 233.8 457.4L371.2 320L233.9 182.6C221.4 170.1 221.4 149.8 233.9 137.3C246.4 124.8 266.7 124.8 279.2 137.3L439.2 297.3z"/></svg>`; nextBtn.setAttribute('aria-label', 'Próximo');
                 wrapEl.appendChild(prevBtn); wrapEl.appendChild(nextBtn);
 
                 function cardW() {
@@ -8407,8 +8474,8 @@
                     const f = 'clamp(32px,6%,72px)';
                     const m = atStart && atEnd ? 'none'
                         : atStart ? `linear-gradient(to right,black 0%,black calc(100% - ${f}),transparent 100%)`
-                        : atEnd   ? `linear-gradient(to right,transparent 0,black ${f},black 100%)`
-                        :           `linear-gradient(to right,transparent 0,black ${f},black calc(100% - ${f}),transparent 100%)`;
+                            : atEnd ? `linear-gradient(to right,transparent 0,black ${f},black 100%)`
+                                : `linear-gradient(to right,transparent 0,black ${f},black calc(100% - ${f}),transparent 100%)`;
                     el.style.webkitMaskImage = m;
                     el.style.maskImage = m;
                 }
@@ -8603,7 +8670,7 @@
                         if (video.hls && window.tocarHls) {
                             window.tocarHls(videoEl, video.hls, () => { videoEl.remove(); videoEl = null; el.classList.remove('playing'); });
                         }
-                        videoEl.play().catch(() => {});
+                        videoEl.play().catch(() => { });
                         el.classList.add('playing');
                     };
                     const parar = () => {
@@ -8709,7 +8776,7 @@
                 toggle.setAttribute('aria-expanded', String(acervoExpandido));
                 $('.acervo-toggle__txt', toggle).textContent = acervoExpandido ? 'Ver menos' : `Ver mais ${excedente} jogos`;
             }
-               function setupAcervoToggle() {
+            function setupAcervoToggle() {
                 const toggle = $('#acervoToggle'); if (!toggle) return;
                 const extra = $('#listaAcervoExtra');
                 toggle.addEventListener('click', () => {
@@ -8768,7 +8835,7 @@
                         if (video.hls && window.tocarHls) {
                             window.tocarHls(videoEl, video.hls, () => { videoEl.remove(); videoEl = null; });
                         }
-                        videoEl.play().catch(() => {});
+                        videoEl.play().catch(() => { });
                     };
                     const parar = () => {
                         clearTimeout(hoverTimer);
@@ -10203,9 +10270,9 @@
                 const t = (recente.title || '').toLowerCase();
                 const label = /season|temporada/.test(t) ? '🎯 Nova Temporada'
                     : /update|patch|atualiza|hotfix|\bv?\d+\.\d+\b/.test(t) ? '🔄️ Atualização Nova'
-                    : /event|evento|festival|holiday|natal|halloween|anniversary|anivers/.test(t) ? '🎉 Evento Ativo'
-                    : /dlc|expansion|expans[aã]o|chapter|cap[ií]tulo/.test(t) ? '✨ Novo Conteúdo'
-                    : dias < 3 ? '🔥 Novidade Fresca' : '🆕 Novidade';
+                        : /event|evento|festival|holiday|natal|halloween|anniversary|anivers/.test(t) ? '🎉 Evento Ativo'
+                            : /dlc|expansion|expans[aã]o|chapter|cap[ií]tulo/.test(t) ? '✨ Novo Conteúdo'
+                                : dias < 3 ? '🔥 Novidade Fresca' : '🆕 Novidade';
                 let rawBody = recente.body || recente.contents || '';
                 if (!rawBody && appId) {
                     const d = await steamFetch(`https://store.steampowered.com/events/ajaxgetadjacentpartnerevents/?appid=${appId}&count_before=0&count_after=3&language=portuguese`);
@@ -10732,12 +10799,12 @@
                 if (heroPool.length > 5) {
                     const btnPrev = document.createElement('button');
                     btnPrev.className = 'nhero-nav nhero-nav--prev'; btnPrev.setAttribute('aria-label', 'Anterior');
-                    btnPrev.innerHTML = '‹';
+                    btnPrev.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22" style="fill:currentColor"><path d="M201.4 297.4C188.9 309.9 188.9 330.2 201.4 342.7L361.4 502.7C373.9 515.2 394.2 515.2 406.7 502.7C419.2 490.2 419.2 469.9 406.7 457.4L269.3 320L406.6 182.6C419.1 170.1 419.1 149.8 406.6 137.3C394.1 124.8 373.8 124.8 361.3 137.3L201.3 297.3z"/></svg>`;
                     btnPrev.addEventListener('click', (e) => { e.preventDefault(); navegarHero(wrap, -1); });
 
                     const btnNext = document.createElement('button');
                     btnNext.className = 'nhero-nav nhero-nav--next'; btnNext.setAttribute('aria-label', 'Próximo');
-                    btnNext.innerHTML = '›';
+                    btnNext.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22" style="fill:currentColor"><path d="M439.1 297.4C451.6 309.9 451.6 330.2 439.1 342.7L279.1 502.7C266.6 515.2 246.3 515.2 233.8 502.7C221.3 490.2 221.3 469.9 233.8 457.4L371.2 320L233.9 182.6C221.4 170.1 221.4 149.8 233.9 137.3C246.4 124.8 266.7 124.8 279.2 137.3L439.2 297.3z"/></svg>`;
                     btnNext.addEventListener('click', (e) => { e.preventDefault(); navegarHero(wrap, +1); });
 
                     wrap.appendChild(btnPrev);
@@ -11023,9 +11090,9 @@
                 wrapEl.querySelectorAll('.rail-nav').forEach(b => b.remove());
                 wrapEl._off = 0;
                 const prev = document.createElement('button');
-                prev.className = 'rail-nav rail-nav--prev'; prev.innerHTML = '‹'; prev.setAttribute('aria-label', 'Anterior');
+                prev.className = 'rail-nav rail-nav--prev'; prev.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22" style="fill:currentColor"><path d="M201.4 297.4C188.9 309.9 188.9 330.2 201.4 342.7L361.4 502.7C373.9 515.2 394.2 515.2 406.7 502.7C419.2 490.2 419.2 469.9 406.7 457.4L269.3 320L406.6 182.6C419.1 170.1 419.1 149.8 406.6 137.3C394.1 124.8 373.8 124.8 361.3 137.3L201.3 297.3z"/></svg>`; prev.setAttribute('aria-label', 'Anterior');
                 const next = document.createElement('button');
-                next.className = 'rail-nav rail-nav--next'; next.innerHTML = '›'; next.setAttribute('aria-label', 'Próximo');
+                next.className = 'rail-nav rail-nav--next'; next.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="22" height="22" style="fill:currentColor"><path d="M439.1 297.4C451.6 309.9 451.6 330.2 439.1 342.7L279.1 502.7C266.6 515.2 246.3 515.2 233.8 502.7C221.3 490.2 221.3 469.9 233.8 457.4L371.2 320L233.9 182.6C221.4 170.1 221.4 149.8 233.9 137.3C246.4 124.8 266.7 124.8 279.2 137.3L439.2 297.3z"/></svg>`; next.setAttribute('aria-label', 'Próximo');
                 wrapEl.appendChild(prev); wrapEl.appendChild(next);
                 const cardW = () => { const c = rail.children[0]; return c ? c.offsetWidth + (parseFloat(getComputedStyle(rail).gap) || 16) : 280; };
                 const maxOff = () => Math.max(0, rail.children.length * cardW() - wrapEl.offsetWidth);
@@ -11475,16 +11542,13 @@
         (function () {
             'use strict';
 
-            /* URLs absolutas obrigatórias no manifest quando servido via Blob URL.
-               Blob URLs não têm origin HTTPS, então caminhos relativos seriam
-               resolvidos contra blob:// e rejeitados pelo Chrome como inválidos. */
-            var ORIGIN    = 'https://elmojunior.github.io';
-            var BASE      = ORIGIN + '/Games-Deck';
-            var SW_URL    = '/Games-Deck/sw.js';
-            var BG_COLOR  = '#141223';
+            var ORIGIN = 'https://elmojunior.github.io';
+            var BASE = ORIGIN + '/Games-Deck';
+            var SW_URL = '/Games-Deck/sw.js';
+            var BG_COLOR = '#141223';
             var THEME_CLR = '#5E1DCF';
 
-            /* Renderiza o SVG do favicon num canvas quadrado e devolve data URI PNG */
+            /* Renderiza o SVG do favicon num canvas quadrado transparente e devolve data URI PNG */
             function renderIcon(svgSrc, size) {
                 return new Promise(function (resolve) {
                     var img = new Image();
@@ -11492,20 +11556,8 @@
                         var c = document.createElement('canvas');
                         c.width = c.height = size;
                         var ctx = c.getContext('2d');
-                        var r = size * 0.22;
-                        ctx.beginPath();
-                        ctx.moveTo(r, 0); ctx.lineTo(size - r, 0);
-                        ctx.arcTo(size, 0, size, r, r);
-                        ctx.lineTo(size, size - r);
-                        ctx.arcTo(size, size, size - r, size, r);
-                        ctx.lineTo(r, size);
-                        ctx.arcTo(0, size, 0, size - r, r);
-                        ctx.lineTo(0, r);
-                        ctx.arcTo(0, 0, r, 0, r);
-                        ctx.closePath();
-                        ctx.fillStyle = BG_COLOR;
-                        ctx.fill();
-                        var pad   = size * 0.15;
+                        // Fundo 100% transparente para corresponder à marca
+                        var pad = size * 0.15;
                         var logoW = size - pad * 2;
                         var logoH = logoW * (259 / 319);
                         var logoY = (size - logoH) / 2;
@@ -11517,59 +11569,84 @@
                 });
             }
 
-            /* Converte data URI em Blob URL — Chrome aceita blob: como src de ícone,
-               mas rejeita data: URIs no manifest (não são "fetchable" pelo browser). */
-            function toBlobUrl(dataUrl) {
+            function dataUriToBlob(dataUrl) {
                 if (!dataUrl) return null;
                 var parts = dataUrl.split(',');
-                var mime  = parts[0].match(/:(.*?);/)[1];
+                var mime = parts[0].match(/:(.*?);/)[1];
                 var bytes = atob(parts[1]);
-                var arr   = new Uint8Array(bytes.length);
+                var arr = new Uint8Array(bytes.length);
                 for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-                return URL.createObjectURL(new Blob([arr], { type: mime }));
+                return new Blob([arr], { type: mime });
             }
 
             async function setupPWA() {
-                var svgSrc = (document.querySelector('link[rel="icon"]') || {}).href;
+                // Serializa a marca (.brand svg) dinamicamente para garantir que o favicon seja idêntico
+                var brandEl = document.querySelector('.brand svg');
+                var svgSrc = '';
+                if (brandEl) {
+                    var brandSvg = brandEl.cloneNode(true);
+                    brandSvg.removeAttribute('style');
+                    brandSvg.setAttribute('width', '319');
+                    brandSvg.setAttribute('height', '259');
+                    var svgText = new XMLSerializer().serializeToString(brandSvg);
+                    svgSrc = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+                    var fav = document.getElementById('appFavicon');
+                    if (fav) fav.href = svgSrc;
+                }
+
                 if (!svgSrc) return;
 
                 var png192 = await renderIcon(svgSrc, 192);
                 var png512 = await renderIcon(svgSrc, 512);
 
-                var url192 = toBlobUrl(png192);
-                var url512 = toBlobUrl(png512);
+                // Grava as imagens geradas no Cache Storage para que o SW consiga servi-las
+                try {
+                    var cache = await caches.open('gamesdeck-v1');
+                    if (png192) {
+                        var b192 = dataUriToBlob(png192);
+                        await cache.put('/Games-Deck/icon-192.png', new Response(b192, { headers: { 'Content-Type': 'image/png' } }));
+                    }
+                    if (png512) {
+                        var b512 = dataUriToBlob(png512);
+                        await cache.put('/Games-Deck/icon-512.png', new Response(b512, { headers: { 'Content-Type': 'image/png' } }));
+                    }
+                } catch (e) {
+                    console.warn('[PWA] Falha ao armazenar ícones no Cache Storage:', e);
+                }
 
                 /* apple-touch-icon (iOS / iPadOS) */
-                if (url192) {
+                if (png192) {
                     var appleLink = document.createElement('link');
-                    appleLink.rel  = 'apple-touch-icon';
-                    appleLink.href = url192;
+                    appleLink.rel = 'apple-touch-icon';
+                    appleLink.href = png192;
                     document.head.appendChild(appleLink);
                 }
 
-                var icons = [];
-                if (url192) icons.push({ src: url192, sizes: '192x192', type: 'image/png' });
-                if (url512) icons.push({ src: url512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' });
+                // Caminhos virtuais servidos pelo SW a partir do cache (resolve o erro de esquema inválido do Chrome)
+                var icons = [
+                    { src: '/Games-Deck/icon-192.png', sizes: '192x192', type: 'image/png' },
+                    { src: '/Games-Deck/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+                ];
 
                 var manifest = {
-                    name:             'Games Deck',
-                    short_name:       'GamesDeck',
-                    description:      'Sua biblioteca pessoal de jogos Steam',
-                    id:               '/Games-Deck/gamesdeck.html',
-                    start_url:        BASE + '/gamesdeck.html',
-                    scope:            BASE + '/',
-                    display:          'standalone',
-                    orientation:      'any',
+                    name: 'Games Deck',
+                    short_name: 'GamesDeck',
+                    description: 'Sua biblioteca pessoal de jogos Steam',
+                    id: '/Games-Deck/gamesdeck.html',
+                    start_url: BASE + '/gamesdeck.html',
+                    scope: BASE + '/',
+                    display: 'standalone',
+                    orientation: 'any',
                     background_color: BG_COLOR,
-                    theme_color:      THEME_CLR,
-                    lang:             'pt-BR',
-                    categories:       ['games', 'entertainment'],
-                    icons:            icons
+                    theme_color: THEME_CLR,
+                    lang: 'pt-BR',
+                    categories: ['games', 'entertainment'],
+                    icons: icons
                 };
 
                 var mBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
                 var link = document.createElement('link');
-                link.rel  = 'manifest';
+                link.rel = 'manifest';
                 link.href = URL.createObjectURL(mBlob);
                 document.head.appendChild(link);
 
