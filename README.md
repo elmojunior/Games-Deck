@@ -3,7 +3,7 @@
 > *"A ânsia de ter e o tédio de possuir."*
 > — Adaptado do pensamento de Arthur Schopenhauer
 
-**Games Deck** é uma biblioteca de jogos pessoal com visual e experiência de loja virtual. O projeto foi desenvolvido sob a premissa de que a atratividade visual de uma loja (com banners dinâmicos, trailers, notícias de atualizações e avaliações) engaja o jogador muito mais do que as listas minimalistas e estáticas das bibliotecas tradicionais. 
+O **Games Deck** é uma biblioteca de jogos pessoal com visual e experiência de loja virtual. O projeto foi desenvolvido sob a premissa de que a atratividade visual de uma loja (com banners dinâmicos, trailers, notícias de atualizações e avaliações) engaja o jogador muito mais do que as listas minimalistas e estáticas das bibliotecas tradicionais. 
 
 O projeto funciona inteiramente no lado do cliente (client-side), sem frameworks, sem dependências externas, sem CDNs, utilizando apenas **HTML, CSS e JavaScript puros** (com exceção do consumo de dados públicos da API da Steam).
 
