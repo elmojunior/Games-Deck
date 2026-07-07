@@ -3968,24 +3968,31 @@
             gap: 12px;
             height: 40px;
             width: min(220px, 40vw);
-            padding: 0 16px;
-            border: none;
-            border-radius: var(--shape-full);
-            background: var(--md-sys-color-surface-high);
-            transition: background .15s;
+            padding: 0 15px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: var(--shape-xs);
+            background: transparent;
+            transition: border-color .15s, box-shadow .15s;
         }
 
         .lib-search:hover {
-            background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, var(--md-sys-color-surface-high));
+            border-color: var(--md-sys-color-on-surface);
         }
 
         .lib-search:focus-within {
-            background: color-mix(in srgb, var(--md-sys-color-on-surface) 10%, var(--md-sys-color-surface-high));
+            border-color: var(--md-sys-color-primary);
+            /* segunda borda interna simula o contorno de 2px do M3 sem deslocar o layout */
+            box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
         }
 
         .lib-search__icon {
             flex-shrink: 0;
             color: var(--md-sys-color-on-surface-var);
+            transition: color .15s;
+        }
+
+        .lib-search:focus-within .lib-search__icon {
+            color: var(--md-sys-color-primary);
         }
 
         .lib-search__input {
@@ -6690,6 +6697,24 @@
                             <input type="search" id="libSearchInput" class="lib-search__input" placeholder="Filtrar…"
                                 autocomplete="off" aria-label="Filtrar jogos da lista">
                         </div>
+                        <div class="md-menu" id="sortMenu">
+                            <button type="button" class="md-menu__field" id="sortField" aria-haspopup="listbox"
+                                aria-expanded="false" aria-label="Ordenar por">
+                                <span class="md-menu__value" id="sortValue">Ordem alfabética</span>
+                                <svg class="md-menu__arrow" viewBox="0 0 24 24" width="20" height="20"
+                                    aria-hidden="true">
+                                    <path fill="currentColor" d="M7 10l5 5 5-5z" />
+                                </svg>
+                            </button>
+                            <ul class="md-menu__list" id="sortList" role="listbox" tabindex="-1"
+                                aria-label="Ordenar por" hidden>
+                                <li class="md-menu__item" role="option" data-value="alpha">Ordem alfabética</li>
+                                <li class="md-menu__item" role="option" data-value="nota">Nota de avaliação</li>
+                                <li class="md-menu__item" role="option" data-value="players">Jogadores online</li>
+                                <li class="md-menu__item" role="option" data-value="lancamento">Data de lançamento</li>
+                                <li class="md-menu__item" role="option" data-value="aquisicao">Data de aquisição</li>
+                            </ul>
+                        </div>
                         <div class="view-toggle" role="group" aria-label="Modo de exibição">
                             <button class="view-toggle__btn is-active" id="viewPosters" type="button"
                                 aria-label="Ver como capas verticais" title="Capas verticais">
@@ -6716,24 +6741,6 @@
                                         d="M96 160C96 124.7 124.7 96 160 96L480 96C515.3 96 544 124.7 544 160L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 160zM144 432L144 464C144 472.8 151.2 480 160 480L192 480C200.8 480 208 472.8 208 464L208 432C208 423.2 200.8 416 192 416L160 416C151.2 416 144 423.2 144 432zM448 416C439.2 416 432 423.2 432 432L432 464C432 472.8 439.2 480 448 480L480 480C488.8 480 496 472.8 496 464L496 432C496 423.2 488.8 416 480 416L448 416zM144 304L144 336C144 344.8 151.2 352 160 352L192 352C200.8 352 208 344.8 208 336L208 304C208 295.2 200.8 288 192 288L160 288C151.2 288 144 295.2 144 304zM448 288C439.2 288 432 295.2 432 304L432 336C432 344.8 439.2 352 448 352L480 352C488.8 352 496 344.8 496 336L496 304C496 295.2 488.8 288 480 288L448 288zM144 176L144 208C144 216.8 151.2 224 160 224L192 224C200.8 224 208 216.8 208 208L208 176C208 167.2 200.8 160 192 160L160 160C151.2 160 144 167.2 144 176zM448 160C439.2 160 432 167.2 432 176L432 208C432 216.8 439.2 224 448 224L480 224C488.8 224 496 216.8 496 208L496 176C496 167.2 488.8 160 480 160L448 160z" />
                                 </svg>
                             </button>
-                        </div>
-                        <div class="md-menu" id="sortMenu">
-                            <button type="button" class="md-menu__field" id="sortField" aria-haspopup="listbox"
-                                aria-expanded="false" aria-label="Ordenar por">
-                                <span class="md-menu__value" id="sortValue">Ordem alfabética</span>
-                                <svg class="md-menu__arrow" viewBox="0 0 24 24" width="20" height="20"
-                                    aria-hidden="true">
-                                    <path fill="currentColor" d="M7 10l5 5 5-5z" />
-                                </svg>
-                            </button>
-                            <ul class="md-menu__list" id="sortList" role="listbox" tabindex="-1"
-                                aria-label="Ordenar por" hidden>
-                                <li class="md-menu__item" role="option" data-value="alpha">Ordem alfabética</li>
-                                <li class="md-menu__item" role="option" data-value="nota">Nota de avaliação</li>
-                                <li class="md-menu__item" role="option" data-value="players">Jogadores online</li>
-                                <li class="md-menu__item" role="option" data-value="lancamento">Data de lançamento</li>
-                                <li class="md-menu__item" role="option" data-value="aquisicao">Data de aquisição</li>
-                            </ul>
                         </div>
                     </div>
                 </div>
@@ -9909,7 +9916,7 @@
             }
             async function getNews(appId) {
                 const ck = 'newsgp:' + appId, c = cacheGet(ck); if (c) return c;
-                const d = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=8&maxlength=400`);
+                const d = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=10&maxlength=400`);
                 const items = (d?.appnews?.newsitems || []).map(n => ({ title: n.title, url: n.url, date: n.date * 1000, feed: n.feedlabel || '', author: n.author || '', contents: n.contents || '' }));
                 if (items.length) cacheSet(ck, items, TTL.news); return items;
             }
@@ -10352,7 +10359,7 @@
                 let enriched = news.map(n => ({ ...n }));
                 const semBody = enriched.every(n => !(n.body || n.contents));
                 if (semBody && appId) {
-                    const d1 = await steamFetch(`https://store.steampowered.com/events/ajaxgetadjacentpartnerevents/?appid=${appId}&count_before=0&count_after=8&language=portuguese`);
+                    const d1 = await steamFetch(`https://store.steampowered.com/events/ajaxgetadjacentpartnerevents/?appid=${appId}&count_before=0&count_after=10&language=portuguese`);
                     if (d1?.events?.length) {
                         d1.events.forEach(e => {
                             const title = e.event_name || '';
@@ -10362,7 +10369,7 @@
                         });
                     }
                     if (enriched.every(n => !n.body)) {
-                        const d2 = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=8&maxlength=500`);
+                        const d2 = await steamFetch(`https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${appId}&count=10&maxlength=500`);
                         (d2?.appnews?.newsitems || []).forEach(item => {
                             const match = enriched.find(n => n.title === item.title);
                             if (match) match.body = item.contents || '';
