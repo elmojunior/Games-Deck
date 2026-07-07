@@ -8284,6 +8284,7 @@
                     if (players) online += players;
                     avaliarFomo(jogo);
                     if (jogo.temFomo) { comNov++; renderEventos(); }
+                    if (players != null) renderEmAlta();
                     feitos++;
                     $('#statOnline').textContent = fmtNum.format(online);
                     $('#statNovidades').textContent = fmtNum.format(comNov);
