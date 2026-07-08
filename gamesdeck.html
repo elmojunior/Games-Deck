@@ -7259,6 +7259,7 @@
                         if (d.desenvolvedora) jogoExp.desenvolvedora = d.desenvolvedora;
                         if (d.lancamento) jogoExp.lancamento = toISO(d.lancamento);
                         if (d.generos && d.generos.length) jogoExp.generos = d.generos;
+                        if (d.categoriasPersonais && d.categoriasPersonais.length) jogoExp.categoriasPersonais = d.categoriasPersonais;
                         if (d.categorias && d.categorias.length) jogoExp.recursos = d.categorias;
                         return jogoExp;
                     });
@@ -7305,7 +7306,7 @@
                         const id = appIdDe(j.steam_url);
 
                         // Grava no cache de detalhes se houver dados adicionais no JSON
-                        if (j.desenvolvedora || j.lancamento || j.generos || j.recursos || j.categorias) {
+                        if (j.desenvolvedora || j.lancamento || j.generos || j.recursos || j.categorias || j.categoriasPersonais) {
                             const cached = cacheGet('details:' + id) || {};
                             let tsLanc = null;
                             if (j.lancamento !== undefined) {
