@@ -6891,6 +6891,7 @@
                             <th>Lançamento</th>
                             <th>Aquisição</th>
                             <th>Gêneros</th>
+                            <th>Categorias</th>
                             <th>Recursos</th>
                             <th>Execução</th>
                             <th class="bm-th-acts"></th>
@@ -7041,6 +7042,12 @@
                 <label class="bm-label" for="bfGeneros">Gêneros <span class="bm-label__hint">— separados por
                         vírgula</span></label>
                 <input type="text" id="bfGeneros" class="bm-input" placeholder="Ex.: Ação, Aventura, Indie"
+                    autocomplete="off">
+            </div>
+            <div class="bm-field">
+                <label class="bm-label" for="bfCategorias">Categorias <span class="bm-label__hint">— personalizadas,
+                        separadas por vírgula</span></label>
+                <input type="text" id="bfCategorias" class="bm-input" placeholder="Ex.: Zerado, Para rejogar, Favoritos do casal"
                     autocomplete="off">
             </div>
             <div class="bm-field">
@@ -7323,6 +7330,7 @@
                                 video: cached.video || null,
                                 generos: j.generos || cached.generos || [],
                                 categorias: j.recursos || j.categorias || cached.categorias || [],
+                                categoriasPersonais: j.categoriasPersonais || cached.categoriasPersonais || [],
                                 incompleto: true
                             };
                             cacheSet('details:' + id, details, 50 * 365 * 24 * 60 * 60 * 1000);
@@ -7492,6 +7500,7 @@
                         '<td class="bm-cell-ano">' + (lanc || '<span class="bm-muted">—</span>') + '</td>' +
                         '<td class="bm-cell-ano">' + (fmtDataBR(j.aquisicao || j.data_aquisicao) || '<span class="bm-muted">—</span>') + '</td>' +
                         '<td>' + celChips(d.generos) + '</td>' +
+                        '<td>' + celChips(d.categoriasPersonais) + '</td>' +
                         '<td>' + celChips(d.categorias) + '</td>' +
                         '<td class="bm-cell-exec">' + execLabel(j) + '</td>' +
                         '<td class="bm-cell-acts">' +
@@ -7557,6 +7566,7 @@
                     if (dpAquis) dpAquis.setISO(j ? (j.aquisicao || j.data_aquisicao || '') : '');
                     const details = editId ? (cacheGet('details:' + editId) || {}) : {};
                     q('bfGeneros').value = (details.generos || []).join(', ');
+                    q('bfCategorias').value = (details.categoriasPersonais || []).join(', ');
                     q('bfRecursos').value = (details.categorias || []).join(', ');
                     fmsg('');
                     form.hidden = false; document.body.style.overflow = 'hidden';
@@ -7591,6 +7601,7 @@
                             video: null
                         };
                         details.generos = q('bfGeneros').value.split(',').map(x => x.trim()).filter(Boolean);
+                        details.categoriasPersonais = q('bfCategorias').value.split(',').map(x => x.trim()).filter(Boolean);
                         details.categorias = q('bfRecursos').value.split(',').map(x => x.trim()).filter(Boolean);
                         cacheSet('details:' + newId, details, 50 * 365 * 24 * 60 * 60 * 1000);
 
@@ -8091,6 +8102,11 @@
                 };
                 novo.generos = unir(novo.generos || [], anterior.generos);
                 novo.categorias = unir(novo.categorias || [], anterior.categorias);
+                // Categorias personalizadas só existem localmente (a Steam nunca as
+                // devolve), então são sempre preservadas integralmente na atualização.
+                if (Array.isArray(anterior.categoriasPersonais) && anterior.categoriasPersonais.length) {
+                    novo.categoriasPersonais = anterior.categoriasPersonais.slice();
+                }
             }
             window.preservarMarcadoresLocais = preservarMarcadoresLocais;
 
@@ -9105,7 +9121,7 @@
 
             /* ----------------------------- Estado ----------------------------- */
             let JOGOS = [];
-            const sel = { generos: new Set(), modos: new Set(), fav: false, novidades: false, notaMin: 0, fomoTipos: new Set() };
+            const sel = { generos: new Set(), modos: new Set(), catsPersonais: new Set(), fav: false, novidades: false, notaMin: 0, fomoTipos: new Set() };
             let ordenacao = localStorage.getItem('bib:ordem') || 'alpha';
             let modoVista = localStorage.getItem('bib:vista') || 'posters';
             let termoBusca = '';
@@ -9357,10 +9373,11 @@
 
             /* ---------------------------- Filtros ----------------------------- */
             function construirFiltros() {
-                const genCount = new Map(), modCount = new Map();
+                const genCount = new Map(), modCount = new Map(), catCount = new Map();
                 JOGOS.forEach(j => {
                     (j.details?.generos || []).forEach(g => genCount.set(g, (genCount.get(g) || 0) + 1));
                     modosDe(j).forEach(m => modCount.set(m, (modCount.get(m) || 0) + 1));
+                    (j.details?.categoriasPersonais || []).forEach(c => catCount.set(c, (catCount.get(c) || 0) + 1));
                 });
                 const ordenar = (map) => [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR'));
 
@@ -9414,6 +9431,11 @@
 
                 // 4. Gêneros
                 cont.appendChild(grupoFiltro('Gêneros', ordenar(genCount), sel.generos));
+
+                // 5. Categorias (personalizadas) — só aparece se houver alguma cadastrada
+                if (catCount.size) {
+                    cont.appendChild(grupoFiltro('Categorias', ordenar(catCount), sel.catsPersonais));
+                }
             }
             function grupoFiltro(titulo, entradas, conjunto) {
                 const g = document.createElement('div'); g.className = 'filter-group';
@@ -9453,6 +9475,10 @@
                 if (sel.modos.size) {
                     const ms = modosDe(j);
                     if (![...sel.modos].every(m => ms.includes(m))) return false;
+                }
+                if (sel.catsPersonais.size) {
+                    const cs = j.details?.categoriasPersonais || [];
+                    if (![...sel.catsPersonais].every(c => cs.includes(c))) return false;
                 }
                 return true;
             }
@@ -9812,7 +9838,7 @@
             }
 
             function limparFiltros() {
-                sel.generos.clear(); sel.modos.clear(); sel.fav = false; sel.novidades = false;
+                sel.generos.clear(); sel.modos.clear(); sel.catsPersonais.clear(); sel.fav = false; sel.novidades = false;
                 sel.notaMin = 0; sel.fomoTipos.clear();
                 termoBusca = ''; const ls = $('#libSearchInput'); if (ls) ls.value = '';
                 construirFiltros(); renderLista();
@@ -10202,6 +10228,9 @@
             function renderSidebar(appId, full, players, reviews) {
                 const side = $('#gpSide');
                 const generos = full?.generos || [];
+                // Categorias personalizadas ficam no cache 'details:' (criadas pelo usuário),
+                // não vêm da Steam, então são lidas separadamente do objeto 'full'.
+                const catsPersonais = (cacheGet('details:' + appId)?.categoriasPersonais) || [];
                 const recursos = destacarRecursos(full?.categorias || []);
                 const controle = full?.controle === 'full' ? 'Suporte total' : full?.controle === 'partial' ? 'Suporte parcial' : null;
 
@@ -10245,6 +10274,11 @@
         <div class="gp-genres-wrap">
             <div class="gp-genres__title">Gêneros</div>
             <div class="gp-chips">${generos.map(g => `<span class="gp-chip">${escapeHtml(g)}</span>`).join('')}</div>
+        </div>` : ''}
+        ${catsPersonais.length ? `
+        <div class="gp-genres-wrap">
+            <div class="gp-genres__title">Categorias</div>
+            <div class="gp-chips">${catsPersonais.map(c => `<span class="gp-chip">${escapeHtml(c)}</span>`).join('')}</div>
         </div>` : ''}
         ${recursos.length ? `<div class="gp-features"><div class="gp-features__title">Recursos</div>${recursos.map(r => `<div class="gp-feature"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="14" height="14" style="fill:currentColor;flex-shrink:0;vertical-align:middle;margin-right:6px"><path d="M320 576C178.6 576 64 461.4 64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576zM438 209.7C427.3 201.9 412.3 204.3 404.5 215L285.1 379.2L233 327.1C223.6 317.7 208.4 317.7 199.1 327.1C189.8 336.5 189.7 351.7 199.1 361L271.1 433C276.1 438 282.9 440.5 289.9 440C296.9 439.5 303.3 435.9 307.4 430.2L443.3 243.2C451.1 232.5 448.7 217.5 438 209.7z"/></svg>${escapeHtml(r)}</div>`).join('')}</div>` : ''}
         ${full?.idiomas ? renderLangs(full.idiomas) : ''}`;
