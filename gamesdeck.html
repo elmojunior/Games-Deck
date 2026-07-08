@@ -3556,6 +3556,51 @@
             overflow: hidden;
         }
 
+        /* Tooltip rico das pílulas de novidade — mesma coloração do .gp-fomo-card */
+        #fomoTip {
+            position: fixed;
+            z-index: 1200;
+            max-width: 320px;
+            padding: 12px 16px;
+            border-radius: var(--shape-m);
+            background: linear-gradient(100deg, var(--md-sys-color-fomo-strong), var(--md-sys-color-fomo));
+            color: var(--md-sys-color-on-fomo);
+            box-shadow: 0 8px 30px color-mix(in srgb, var(--md-sys-color-fomo-strong) 40%, transparent);
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity .15s, transform .15s;
+        }
+
+        #fomoTip.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #fomoTip .fomo-tip__label {
+            font-size: .7rem;
+            font-weight: 700;
+            opacity: .75;
+            margin-bottom: 4px;
+        }
+
+        #fomoTip .fomo-tip__title {
+            font-size: .95rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+
+        #fomoTip .fomo-tip__intro {
+            font-size: .82rem;
+            line-height: 1.5;
+            opacity: .85;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
         .gp-about {
             line-height: 1.7;
             font-size: .95rem;
@@ -8441,6 +8486,7 @@
                 const recente = jogo.news.reduce((a, b) => (b.date > a.date ? b : a));
                 const dias = (Date.now() - recente.date) / 86400000;
                 if (dias <= FOMO_JANELA_DIAS) { jogo.temFomo = true; jogo.fomoNews = recente; jogo.fomoLabel = rotularFomo(recente, dias); }
+                registrarFomoTip(jogo);
             }
             function rotularFomo(news, dias) {
                 const t = (news.title || '').toLowerCase();
@@ -8451,6 +8497,72 @@
                 if (dias < 3) return '🔥 Novidade Fresca';
                 return '🆕 Novidade';
             }
+
+            /* ---- Tooltip rico das pílulas de novidade (fomo-chip) ----
+               Registro global appId → {label, título, introdução} preenchido por ambas as
+               páginas (Início e Biblioteca) e um único tooltip por delegação de eventos,
+               com a mesma coloração do cartão de novidade (.gp-fomo-card). */
+            window.fomoInfo = window.fomoInfo || {};
+            window.registrarFomoTip = function (jogo) {
+                if (!jogo) return;
+                if (jogo.temFomo && jogo.fomoNews) {
+                    window.fomoInfo[jogo.appId] = {
+                        label: jogo.fomoLabel || '',
+                        titulo: jogo.fomoNews.title || '',
+                        intro: jogo.fomoNews.contents || jogo.fomoNews.body || ''
+                    };
+                } else {
+                    delete window.fomoInfo[jogo.appId];
+                }
+            };
+            (function initFomoTip() {
+                if (window.__fomoTipInit) return; window.__fomoTipInit = true;
+                const escTip = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+                const limparIntro = (s) => (s || '')
+                    .replace(/\[img\][^\[]*\[\/img\]/gi, ' ')
+                    .replace(/\{STEAM_CLAN_IMAGE\}[^\s\[\]]*/gi, ' ')
+                    .replace(/\[url=[^\]]*\]/gi, '').replace(/\[\/url\]/gi, '')
+                    .replace(/\[\/?[a-z*][^\]]*\]/gi, ' ')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+                    .replace(/\s+/g, ' ').trim();
+                let tip = null, alvo = null;
+                const getTip = () => {
+                    if (!tip) { tip = document.createElement('div'); tip.id = 'fomoTip'; tip.setAttribute('role', 'tooltip'); document.body.appendChild(tip); }
+                    return tip;
+                };
+                const posicionar = (chip) => {
+                    const t = getTip(), r = t.getBoundingClientRect(), cr = chip.getBoundingClientRect(), m = 12;
+                    let left = cr.left + cr.width / 2 - r.width / 2;
+                    let top = cr.top - r.height - 8;
+                    if (top < m) top = cr.bottom + 8;                     // abaixo, se não couber acima
+                    left = Math.max(m, Math.min(left, window.innerWidth - r.width - m));
+                    t.style.left = left + 'px'; t.style.top = top + 'px';
+                };
+                const esconder = () => { if (alvo) { getTip().classList.remove('is-visible'); alvo = null; } };
+                document.addEventListener('mouseover', (e) => {
+                    const chip = e.target.closest && e.target.closest('.fomo-chip');
+                    if (!chip) return;
+                    const host = chip.closest('[data-appid]'); if (!host) return;
+                    const info = window.fomoInfo[host.dataset.appid];
+                    if (!info || (!info.titulo && !info.intro)) return;
+                    const t = getTip();
+                    const intro = limparIntro(info.intro);
+                    t.innerHTML =
+                        (info.label ? `<div class="fomo-tip__label">${escTip(info.label)}</div>` : '') +
+                        (info.titulo ? `<div class="fomo-tip__title">${escTip(info.titulo)}</div>` : '') +
+                        (intro ? `<div class="fomo-tip__intro">${escTip(intro)}</div>` : '');
+                    alvo = chip;
+                    t.classList.add('is-visible');
+                    posicionar(chip);
+                    requestAnimationFrame(() => { if (alvo === chip) posicionar(chip); }); // remede após render
+                });
+                document.addEventListener('mouseout', (e) => {
+                    const chip = e.target.closest && e.target.closest('.fomo-chip');
+                    if (chip && chip === alvo) esconder();
+                });
+                window.addEventListener('scroll', esconder, true);
+            })();
 
             /* ------------------------------ HERO ------------------------------ */
             let heroIndex = 0, heroTimer = null, heroSlides = [];
@@ -9358,12 +9470,12 @@
                         const d = await steamFetch(url);
                         const events = d?.events;
                         if (events?.length) {
-                            const items = events.map(e => ({ title: e.event_name, url: `https://store.steampowered.com/news/app/${appId}`, date: e.announcement_body?.posttime * 1000 || Date.now(), feed: 'Steam' }));
+                            const items = events.map(e => ({ title: e.event_name, url: `https://store.steampowered.com/news/app/${appId}`, date: e.announcement_body?.posttime * 1000 || Date.now(), feed: 'Steam', body: e.announcement_body?.body || '' }));
                             cacheSet(ck, items, TTL.news); return items;
                         }
                         const newsitems = d?.appnews?.newsitems;
                         if (newsitems?.length) {
-                            const items = newsitems.map(n => ({ title: n.title, url: n.url, date: n.date * 1000, feed: n.feedlabel || '' }));
+                            const items = newsitems.map(n => ({ title: n.title, url: n.url, date: n.date * 1000, feed: n.feedlabel || '', body: n.contents || '' }));
                             cacheSet(ck, items, TTL.news); return items;
                         }
                     }
@@ -9414,11 +9526,12 @@
                 return '🆕 Novidade';
             }
             function avaliarFomo(jogo) {
-                if (!jogo.news?.length) { jogo.temFomo = false; jogo.fomoLabel = null; return; }
+                if (!jogo.news?.length) { jogo.temFomo = false; jogo.fomoLabel = null; jogo.fomoNews = null; registrarFomoTip(jogo); return; }
                 const recente = jogo.news.reduce((a, b) => (b.date > a.date ? b : a));
                 const dias = (Date.now() - recente.date) / 86400000;
-                if (dias <= FOMO_JANELA_DIAS) { jogo.temFomo = true; jogo.fomoLabel = rotularFomo(recente, dias); }
-                else { jogo.temFomo = false; jogo.fomoLabel = null; }
+                if (dias <= FOMO_JANELA_DIAS) { jogo.temFomo = true; jogo.fomoNews = recente; jogo.fomoLabel = rotularFomo(recente, dias); }
+                else { jogo.temFomo = false; jogo.fomoLabel = null; jogo.fomoNews = null; }
+                registrarFomoTip(jogo);
             }
             // Nota unificada 0–100: usa % de avaliações positivas; cai no Metacritic.
             function notaDe(j) {
