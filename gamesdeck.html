@@ -2196,6 +2196,12 @@
             display: flex;
         }
 
+        /* Separação dos tooltips no Explorar o Acervo (list-item): com o mouse sobre a
+           pílula de novidade, oculta o tooltip de gêneros para não se sobrepor ao rico. */
+        .li-row.is-overflow:has(.fomo-chip:hover)>.li-tip {
+            display: none !important;
+        }
+
         .list-item__genres {
             display: flex;
             gap: 6px;
@@ -6374,6 +6380,15 @@
         .card .bm-chips.is-overflow:hover .bm-chips__tip,
         .card .bm-chips.is-overflow:focus-within .bm-chips__tip {
             display: flex !important;
+        }
+
+        /* Separação dos tooltips: enquanto o mouse está sobre a pílula de novidade,
+           o tooltip de gêneros (que não couberam) fica oculto para não se sobrepor ao
+           tooltip rico da novidade. Vale para capas horizontais, vídeos e Explorar Acervo. */
+        .bm-chips.is-overflow:has(.fomo-chip:hover) .bm-chips__tip,
+        .video-card .bm-chips.is-overflow:has(.fomo-chip:hover) .bm-chips__tip,
+        .card .bm-chips.is-overflow:has(.fomo-chip:hover) .bm-chips__tip {
+            display: none !important;
         }
 
         /* Pílulas compactas na Tela Inicial (evita desproporção de tamanho) */
