@@ -9380,7 +9380,7 @@
                     modosDe(j).forEach(m => modCount.set(m, (modCount.get(m) || 0) + 1));
                     (j.details?.categoriasPersonais || []).forEach(c => catCount.set(c, (catCount.get(c) || 0) + 1));
                 });
-                const ordenar = (map) => [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR'));
+                const ordenar = (map) => [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
 
                 const cont = $('#filterGroups');
                 cont.innerHTML = '';
@@ -9399,7 +9399,7 @@
                     };
                     const fomoGrp = document.createElement('div'); fomoGrp.className = 'filter-group';
                     fomoGrp.innerHTML = '<h3 class="filter-group__title">Tipo de novidade</h3>';
-                    [...fomoTiposCount.entries()].sort((a, b) => b[1] - a[1]).forEach(([label, count]) => {
+                    [...fomoTiposCount.entries()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')).forEach(([label, count]) => {
                         const lbl = document.createElement('label'); lbl.className = 'filter-opt';
                         if (fomoDesc[label]) lbl.title = fomoDesc[label];
                         lbl.innerHTML = `<input type="checkbox" ${sel.fomoTipos.has(label) ? 'checked' : ''}><span class="filter-opt__nome">${label}</span><span class="filter-opt__num">${count}</span>`;
