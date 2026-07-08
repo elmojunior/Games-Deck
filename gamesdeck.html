@@ -9373,10 +9373,15 @@
             }
 
             /* ---------------------------- Filtros ----------------------------- */
+            // Normaliza o rótulo de exibição de um gênero no filtro. Ex.: a Steam usa
+            // "Multijogador Massivo Online (MMO)" / "Massively Multiplayer"; aqui vira só "MMO".
+            function nomeGenero(g) {
+                return /massiv|\(mmo\)/i.test(g) ? 'MMO' : g;
+            }
             function construirFiltros() {
                 const genCount = new Map(), modCount = new Map(), catCount = new Map();
                 JOGOS.forEach(j => {
-                    (j.details?.generos || []).forEach(g => genCount.set(g, (genCount.get(g) || 0) + 1));
+                    (j.details?.generos || []).forEach(g => { const n = nomeGenero(g); genCount.set(n, (genCount.get(n) || 0) + 1); });
                     modosDe(j).forEach(m => modCount.set(m, (modCount.get(m) || 0) + 1));
                     (j.details?.categoriasPersonais || []).forEach(c => catCount.set(c, (catCount.get(c) || 0) + 1));
                 });
@@ -9470,7 +9475,7 @@
                 if (sel.notaMin > 0) { const n = notaDe(j); if (n == null || n < sel.notaMin) return false; }
                 if (sel.fomoTipos.size) { if (!j.temFomo || !sel.fomoTipos.has(j.fomoLabel)) return false; }
                 if (sel.generos.size) {
-                    const gs = j.details?.generos || [];
+                    const gs = (j.details?.generos || []).map(nomeGenero);
                     if (![...sel.generos].every(g => gs.includes(g))) return false;
                 }
                 if (sel.modos.size) {
