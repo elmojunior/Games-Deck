@@ -8076,13 +8076,33 @@
             window.steamFetchText = steamFetchText;
             window.mesclarMarcadores = mesclarMarcadores;
 
+            /* Une aos dados recém-baixados os marcadores (gêneros/categorias) que já
+               existiam no cache anterior e não vieram da Steam — normalmente os itens
+               personalizados criados pelo usuário. A atualização passa a preencher o
+               que falta sem remover o que é somente local. Não altera a estrutura dos
+               dados salvos, então é compatível com bibliotecas já em uso. */
+            function preservarMarcadoresLocais(novo, anterior) {
+                if (!anterior) return;
+                const unir = (destino, origem) => {
+                    if (!Array.isArray(origem)) return destino;
+                    const existentes = new Set(destino);
+                    origem.forEach(x => { if (!existentes.has(x)) destino.push(x); });
+                    return destino;
+                };
+                novo.generos = unir(novo.generos || [], anterior.generos);
+                novo.categorias = unir(novo.categorias || [], anterior.categorias);
+            }
+            window.preservarMarcadoresLocais = preservarMarcadoresLocais;
+
             /* Força rebuscar TODOS os dados de um jogo (ignora o cache existente),
                usado pela página "Gerenciar Biblioteca" para completar jogos importados
                que não tiveram todas as informações baixadas. Retorna os dados frescos. */
             window.pdRefreshJogo = async function (appId) {
-                ['players:', 'details:', 'news:', 'rev:'].forEach(k => { try { localStorage.removeItem(CACHE_PREFIX + k + appId); } catch (e) { } });
+                // Mantém 'details:' no cache para que getDetails possa mesclar os
+                // marcadores personalizados existentes; a rebusca é forçada via parâmetro.
+                ['players:', 'news:', 'rev:'].forEach(k => { try { localStorage.removeItem(CACHE_PREFIX + k + appId); } catch (e) { } });
                 const [players, details, news, reviews] = await Promise.all([
-                    getPlayers(appId), getDetails(appId), getNews(appId), getReviews(appId)
+                    getPlayers(appId), getDetails(appId, true), getNews(appId), getReviews(appId)
                 ]);
                 return { players, details, news, reviews };
             };
@@ -8095,8 +8115,8 @@
                     const n = d?.response?.player_count ?? null; if (n != null) cacheSet(ck, n, TTL.players); return n;
                 });
             }
-            async function getDetails(appId) {
-                const ck = 'details:' + appId, c = cacheGet(ck); if (c && !c.incompleto) return c;
+            async function getDetails(appId, forcar) {
+                const ck = 'details:' + appId, c = cacheGet(ck); if (c && !c.incompleto && !forcar) return c;
                 return enfileirar(async () => {
                     try {
                         const d = await steamFetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=portuguese`);
@@ -8116,6 +8136,10 @@
                             video: pickVideo(g.movies)
                         };
                         await mesclarMarcadores(appId, m.generos, m.categorias);
+                        // Preserva os marcadores que já existiam no cache e não vieram da Steam
+                        // (tipicamente os gêneros/recursos personalizados criados pelo usuário):
+                        // atualização = preencher o que falta sem remover o que é só local.
+                        preservarMarcadoresLocais(m, c);
                         cacheSet(ck, m, TTL.details); return m;
                     } catch { return null; }
                 });
@@ -9191,8 +9215,8 @@
                     hls: hls ? hls.replace(/^http:/, 'https:') : null
                 };
             }
-            async function getDetails(appId) {
-                const ck = 'details:' + appId, c = cacheGet(ck); if (c && !c.incompleto) return c;
+            async function getDetails(appId, forcar) {
+                const ck = 'details:' + appId, c = cacheGet(ck); if (c && !c.incompleto && !forcar) return c;
                 return enfileirar(async () => {
                     try {
                         const d = await steamFetch(`https://store.steampowered.com/api/appdetails?appids=${appId}&l=portuguese`);
@@ -9212,6 +9236,8 @@
                             video: pickVideo(g.movies)
                         };
                         await window.mesclarMarcadores(appId, m.generos, m.categorias);
+                        // Preserva marcadores locais (personalizados) ausentes nos dados da Steam.
+                        preservarMarcadoresLocais(m, c);
                         cacheSet(ck, m, TTL.details); return m;
                     } catch { return null; }
                 });
