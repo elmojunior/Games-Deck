@@ -8157,6 +8157,15 @@
                     const { t, ttl, v } = JSON.parse(r); return (Date.now() - t > ttl) ? null : v;
                 } catch { return null; }
             }
+            // Lê o valor bruto ignorando a expiração. Usado só para preservar campos
+            // manuais (gêneros/categorias personalizados) mesmo quando o cache de
+            // detalhes já expirou — assim uma atualização da Steam nunca os apaga.
+            function cacheGetRaw(key) {
+                try {
+                    const r = localStorage.getItem(CACHE_PREFIX + key); if (!r) return null;
+                    return JSON.parse(r).v;
+                } catch { return null; }
+            }
             function cacheSet(key, value, ttl) {
                 try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), ttl, v: value })); } catch { }
             }
@@ -8301,10 +8310,12 @@
                             video: pickVideo(g.movies)
                         };
                         await mesclarMarcadores(appId, m.generos, m.categorias);
-                        // Preserva os marcadores que já existiam no cache e não vieram da Steam
+                        // Preserva os marcadores que já existiam e não vieram da Steam
                         // (tipicamente os gêneros/recursos personalizados criados pelo usuário):
                         // atualização = preencher o que falta sem remover o que é só local.
-                        preservarMarcadoresLocais(m, c);
+                        // Lê o valor BRUTO (cacheGetRaw), pois o cache de detalhes pode ter
+                        // expirado (TTL de 24h) — do contrário os manuais se perderiam.
+                        preservarMarcadoresLocais(m, cacheGetRaw(ck));
                         cacheSet(ck, m, TTL.details); return m;
                     } catch { return null; }
                 });
@@ -9362,6 +9373,15 @@
                     const { t, ttl, v } = JSON.parse(r); return (Date.now() - t > ttl) ? null : v;
                 } catch { return null; }
             }
+            // Lê o valor bruto ignorando a expiração. Usado só para preservar campos
+            // manuais (gêneros/categorias personalizados) mesmo quando o cache de
+            // detalhes já expirou — assim uma atualização da Steam nunca os apaga.
+            function cacheGetRaw(key) {
+                try {
+                    const r = localStorage.getItem(CACHE_PREFIX + key); if (!r) return null;
+                    return JSON.parse(r).v;
+                } catch { return null; }
+            }
             function cacheSet(key, value, ttl) {
                 try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), ttl, v: value })); } catch { }
             }
@@ -9469,7 +9489,9 @@
                         };
                         await window.mesclarMarcadores(appId, m.generos, m.categorias);
                         // Preserva marcadores locais (personalizados) ausentes nos dados da Steam.
-                        preservarMarcadoresLocais(m, c);
+                        // Valor BRUTO: o cache pode ter expirado (TTL 24h) e ainda assim os
+                        // manuais precisam sobreviver à atualização da Steam.
+                        preservarMarcadoresLocais(m, cacheGetRaw(ck));
                         cacheSet(ck, m, TTL.details); return m;
                     } catch { return null; }
                 });
@@ -10943,6 +10965,15 @@
                 try {
                     const r = localStorage.getItem(CACHE_PREFIX + key); if (!r) return null;
                     const { t, ttl, v } = JSON.parse(r); return (Date.now() - t > ttl) ? null : v;
+                } catch { return null; }
+            }
+            // Lê o valor bruto ignorando a expiração. Usado só para preservar campos
+            // manuais (gêneros/categorias personalizados) mesmo quando o cache de
+            // detalhes já expirou — assim uma atualização da Steam nunca os apaga.
+            function cacheGetRaw(key) {
+                try {
+                    const r = localStorage.getItem(CACHE_PREFIX + key); if (!r) return null;
+                    return JSON.parse(r).v;
                 } catch { return null; }
             }
             function cacheSet(key, value, ttl) {
