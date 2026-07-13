@@ -7325,6 +7325,14 @@
                     const { t, ttl, v } = JSON.parse(r); return (Date.now() - t > ttl) ? null : v;
                 } catch { return null; }
             };
+            // Lê o valor bruto ignorando a expiração — usado para NUNCA perder os campos
+            // manuais (gêneros/categorias personalizados) de detalhes já expirados.
+            const cacheGetRaw = (key) => {
+                try {
+                    const r = localStorage.getItem(CACHE_PREFIX + key); if (!r) return null;
+                    return JSON.parse(r).v;
+                } catch { return null; }
+            };
             const cacheSet = (key, value, ttl) => {
                 try { localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), ttl, v: value })); } catch { }
             };
@@ -7402,7 +7410,7 @@
                     };
                     const jogos = lista.map(j => {
                         const id = appIdDe(j.steam_url);
-                        const d = cacheGet('details:' + id) || {};
+                        const d = cacheGetRaw('details:' + id) || {};
                         const jogoExp = { ...j };
                         if (d.desenvolvedora) jogoExp.desenvolvedora = d.desenvolvedora;
                         if (d.lancamento) jogoExp.lancamento = toISO(d.lancamento);
@@ -7455,7 +7463,7 @@
 
                         // Grava no cache de detalhes se houver dados adicionais no JSON
                         if (j.desenvolvedora || j.lancamento || j.generos || j.recursos || j.categorias || j.categoriasPersonais) {
-                            const cached = cacheGet('details:' + id) || {};
+                            const cached = cacheGetRaw('details:' + id) || {};
                             let tsLanc = null;
                             if (j.lancamento !== undefined) {
                                 if (typeof j.lancamento === 'number') {
@@ -7539,6 +7547,14 @@
                 try {
                     const r = localStorage.getItem(CACHE_PREFIX + key); if (!r) return null;
                     const { t, ttl, v } = JSON.parse(r); return (Date.now() - t > ttl) ? null : v;
+                } catch { return null; }
+            };
+            // Lê o valor bruto ignorando a expiração — usado para NUNCA perder os campos
+            // manuais (gêneros/categorias personalizados) de detalhes já expirados.
+            const cacheGetRaw = (key) => {
+                try {
+                    const r = localStorage.getItem(CACHE_PREFIX + key); if (!r) return null;
+                    return JSON.parse(r).v;
                 } catch { return null; }
             };
             const cacheSet = (key, value, ttl) => {
@@ -7637,7 +7653,7 @@
                 };
                 const linhaHTML = (j) => {
                     const id = appIdDe(j.steam_url);
-                    const d = cacheGet('details:' + id) || {};
+                    const d = cacheGetRaw('details:' + id) || {};
                     const full = cacheGet('full:' + id) || {};
                     const ts = d.lancamento || full.lancamento || (full.lancamentoTxt ? parseReleaseDate({ date: full.lancamentoTxt }) : null);
                     const lanc = ts ? new Date(ts).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
@@ -7713,7 +7729,7 @@
                     q('bfImgV').value = j ? (j.img_v || '') : '';
                     q('bfAquis').value = j ? fmtDataBR(j.aquisicao || j.data_aquisicao) : '';
                     if (dpAquis) dpAquis.setISO(j ? (j.aquisicao || j.data_aquisicao || '') : '');
-                    const details = editId ? (cacheGet('details:' + editId) || {}) : {};
+                    const details = editId ? (cacheGetRaw('details:' + editId) || {}) : {};
                     q('bfGeneros').value = (details.generos || []).join(', ');
                     q('bfCategorias').value = (details.categoriasPersonais || []).join(', ');
                     q('bfRecursos').value = (details.categorias || []).join(', ');
@@ -7738,7 +7754,7 @@
 
                     const newId = appIdDe(dados.steam_url);
                     if (newId) {
-                        const details = cacheGet('details:' + newId) || {
+                        const details = cacheGetRaw('details:' + newId) || {
                             nome: dados.nome,
                             descricao: '',
                             desenvolvedora: '',
